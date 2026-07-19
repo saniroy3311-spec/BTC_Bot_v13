@@ -272,7 +272,7 @@ table.trade-table .num.neg{color:var(--warning)}
         <!-- Monthly trades -->
         <div class="wf-panel">
           <div class="wf-header"><h3>Monthly Trade Count</h3></div>
-          <div id="btMonthlyChart" style="height:160px"></div>
+          <canvas id="btMonthlyChart" style="max-height:160px"></canvas>
         </div>
       </div>
       <!-- RIGHT -->
@@ -563,5 +563,5 @@ function renderBacktest(){
 
 // ─── Init ───
 poll();setInterval(poll,2000);
-renderBacktest(); // pre-generate backtest data
+btTrades=generateBacktestData(); // pre-generate, render on tab click
 </script></body></html>
