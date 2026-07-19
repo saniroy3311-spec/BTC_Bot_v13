@@ -209,8 +209,8 @@ async function handleRequest(req, res) {
       }
       if (body.direction) state.openTrade = { direction: body.direction, entryPrice: body.entryPrice, entryTime: body.entryTime, sl: body.sl, tp: body.tp, currentPrice: body.currentPrice, unrealizedPnl: body.unrealizedPnl };
 
-      // Keep max 500 trades in memory
-      if (state.trades.length > 500) state.trades = state.trades.slice(-500);
+      // Keep max 5000 trades in memory
+      if (state.trades.length > 5000) state.trades = state.trades.slice(-5000);
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: true, tradesCount: state.trades.length }));
