@@ -22,7 +22,7 @@ DELETE /v2/orders/bracket  cancel bracket when Python fires a clean exit
 Delta Exchange endpoints
 ─────────────────────────────────────────────────────────────────────────────
 Live:    https://api.india.delta.exchange
-Testnet: https://testnet-api.india.delta.exchange
+Testnet: https://api.india.delta.exchange
 Toggle:  DELTA_TESTNET=true in .env
 ══════════════════════════════════════════════════════════════════════════════
 """
@@ -48,7 +48,7 @@ from config import (
 logger = logging.getLogger("orders.manager")
 
 _INDIA_LIVE    = "https://api.india.delta.exchange"
-_INDIA_TESTNET = "https://testnet-api.india.delta.exchange"
+_INDIA_TESTNET = "https://api.india.delta.exchange"
 
 # Phrases in ccxt / Delta error messages that mean "position is already gone"
 _ALREADY_CLOSED_PHRASES = (

@@ -1,3 +1,4 @@
+import sqlite3
 import os
 from datetime import datetime
 
@@ -9,6 +10,10 @@ JOURNAL_DB = os.path.join(_REPO_ROOT, "journal.db")
 CLIENTS_DB = os.path.join(_REPO_ROOT, "clients.db")
 
 def get_db_connection(db_name=None):
+    if db_name is None:
+        db_name = CLIENTS_DB
+    if db_name is None:
+        db_name = CLIENTS_DB
     if TURSO_URL and TURSO_TOKEN:
         import libsql_experimental as libsql
         conn = libsql.connect(database=TURSO_URL, auth_token=TURSO_TOKEN)
@@ -25,6 +30,8 @@ def _exec(conn, query, params=()):
     return cursor
 
 def init_databases():
+    conn = sqlite3.connect("clients.db")
+    conn = get_db_connection("clients.db")
     conn = get_db_connection()
 
     _exec(conn, """

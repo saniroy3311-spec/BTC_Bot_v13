@@ -70,7 +70,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("feed.fills_feed")
 
 _WS_LIVE    = "wss://socket.india.delta.exchange"
-_WS_TESTNET = "wss://testnet-socket.india.delta.exchange"
+_WS_TESTNET = "wss://socket.india.delta.exchange"
 
 # Reconnect delay on failure (seconds)
 _RECONNECT_SEC   = 5
