@@ -14,11 +14,31 @@ const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 
-// ─── Telegram config (set env vars on your VPS) ────────────
-//   TELEGRAM_BOT_TOKEN = your bot token from @BotFather
-//   TELEGRAM_CHAT_ID   = your chat ID (or group ID)
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || null;
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || null;
+// ─── Telegram config ───────────────────────────────────────
+// Priority: config.json > env vars > no notifications
+// Create config.json on VPS: { "botToken": "...", "chatId": "..." }
+let TELEGRAM_BOT_TOKEN = null;
+let TELEGRAM_CHAT_ID = null;
+try {
+  const cfgPath = path.join(__dirname, 'config.json');
+  if (fs.existsSync(cfgPath)) {
+    const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+    TELEGRAM_BOT_TOKEN = cfg.botToken || process.env.TELEGRAM_BOT_TOKEN;
+    TELEGRAM_CHAT_ID = cfg.chatId || process.env.TELEGRAM_CHAT_ID;
+  } else {
+    TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+    TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+  }
+} catch (e) {
+  TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+  TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+}
+
+if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+  console.log('[Telegram] Notifications enabled');
+} else {
+  console.log('[Telegram] Notifications disabled (set botToken + chatId in config.json or env vars)');
+}
 
 // Track last notified trade IDs so we don't spam duplicates
 const notifiedTrades = new Set();
