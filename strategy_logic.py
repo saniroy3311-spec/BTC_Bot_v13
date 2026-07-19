@@ -275,53 +275,28 @@ def evaluate_entry(snap: IndicatorSnapshot, has_position: bool) -> Signal:
     if has_position:
         return Signal(SignalType.NONE, False, False, "none")
 
-    # RSIMom+M3 strategy — replaces ADX/DMI based logic
-    vol_ok = snap.vol_ok and snap.volume > snap.vol_sma * VOL_MULT
-    f = snap.filters_ok and vol_ok
+    # RSIMom+M3 — standalone, no ADX/DMI dependency
+    trend_up = snap.ema_fast > snap.ema_trend
+    trend_dn = snap.ema_fast < snap.ema_trend
+    vol_ok = snap.volume > snap.vol_sma * VOL_MULT
 
-    # RSIMom Long: uptrend + RSI crosses above threshold + price above EMA20 + volume
-    rml = (
-        snap.ema_fast > snap.ema_trend
-        and snap.rsi > RSI_LONG
-        and snap.rsi <= RSI_LONG  # first bar above threshold (will be handled by no-reprint)
-        and snap.close > snap.ema20
-        and f
-    )
-    # RSIMom Short: downtrend + RSI crosses below threshold + price below EMA20 + volume
-    rms = (
-        snap.ema_fast < snap.ema_trend
-        and snap.rsi < RSI_SHORT
-        and snap.close < snap.ema20
-        and f
-    )
-    # M3 Long: 3 consecutive higher closes + volume
-    m3l = (
-        snap.close > snap.ema20
-        and snap.ema20 > snap.ema_fast
-        and snap.close > snap.prev_close
-        and snap.prev_close > snap.close_2
-        and snap.close_2 > snap.close_3
-        and f
-    )
-    # M3 Short: 3 consecutive lower closes + volume
-    m3s = (
-        snap.close < snap.ema20
-        and snap.ema20 < snap.ema_fast
-        and snap.close < snap.prev_close
-        and snap.prev_close < snap.close_2
-        and snap.close_2 < snap.close_3
-        and f
-    )
+    # RSIMom Long: uptrend + RSI > threshold + price above EMA20 + volume
+    rml = trend_up and snap.rsi > RSI_LONG and snap.close > snap.ema20 and vol_ok
+    # RSIMom Short: downtrend + RSI < threshold + price below EMA20 + volume
+    rms = trend_dn and snap.rsi < RSI_SHORT and snap.close < snap.ema20 and vol_ok
+    # M3 Long: 3 higher closes + above EMA20 + volume
+    m3l = (snap.close > snap.ema20 and snap.ema20 > snap.ema_fast and
+           snap.close > snap.prev_close and snap.prev_close > snap.close_2 and
+           snap.close_2 > snap.close_3 and vol_ok)
+    # M3 Short: 3 lower closes + below EMA20 + volume
+    m3s = (snap.close < snap.ema20 and snap.ema20 < snap.ema_fast and
+           snap.close < snap.prev_close and snap.prev_close < snap.close_2 and
+           snap.close_2 < snap.close_3 and vol_ok)
 
-    # No-reprint gate using signal hash
-    if rml:
-        return Signal(SignalType.TREND_LONG, True, True, "rsimom_long")
-    if rms:
-        return Signal(SignalType.TREND_SHORT, False, True, "rsimom_short")
-    if m3l:
-        return Signal(SignalType.TREND_LONG, True, True, "m3_long")
-    if m3s:
-        return Signal(SignalType.TREND_SHORT, False, True, "m3_short")
+    if rml: return Signal(SignalType.TREND_LONG, True, True, "rsimom_long")
+    if rms: return Signal(SignalType.TREND_SHORT, False, True, "rsimom_short")
+    if m3l: return Signal(SignalType.TREND_LONG, True, True, "m3_long")
+    if m3s: return Signal(SignalType.TREND_SHORT, False, True, "m3_short")
     return Signal(SignalType.NONE, False, False, "none")
 
 

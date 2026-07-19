@@ -46,7 +46,7 @@ class BTTrade:
     real_pl:      float = 0.0
 
 
-def _row_to_snap(row, prev_row) -> IndicatorSnapshot:
+def _row_to_snap(row, prev_row, prev2_row=None, prev3_row=None) -> IndicatorSnapshot:
     from config import ADX_TREND_TH, ADX_RANGE_TH, FILTER_ATR_MULT, FILTER_BODY_MULT, FILTER_VOL_ENABLED
     atr = float(row["atr"])
     atr_sma = float(row["atr_sma"])
@@ -61,9 +61,12 @@ def _row_to_snap(row, prev_row) -> IndicatorSnapshot:
     else:
         vol_ok = True
     adx_v = float(row["adx"])
+    p2 = prev2_row if prev2_row is not None else prev_row
+    p3 = prev3_row if prev3_row is not None else p2
     return IndicatorSnapshot(
         ema_trend    = float(row["ema200"]),
         ema_fast     = float(row["ema50"]),
+        ema20        = float(row["ema20"]),
         atr          = atr,
         rsi          = float(row["rsi"]),
         dip          = float(row["dip"]),
@@ -86,6 +89,9 @@ def _row_to_snap(row, prev_row) -> IndicatorSnapshot:
         prev_high    = float(prev_row["high"]),
         prev_low     = float(prev_row["low"]),
         timestamp    = int(row["timestamp"]),
+        prev_close   = float(prev_row["close"]),
+        close_2      = float(p2["close"]),
+        close_3      = float(p3["close"]),
     )
 
 
@@ -301,7 +307,9 @@ def run_backtest(df: pd.DataFrame, signal_log_path: Optional[str] = None) -> lis
                 continue
 
         if not in_position and pending_signal is None:
-            snap = _row_to_snap(row, prev_row)
+            prev2 = series.iloc[i-2] if i >= 2 else prev_row
+            prev3 = series.iloc[i-3] if i >= 3 else prev2
+            snap = _row_to_snap(row, prev_row, prev2, prev3)
             sig = evaluate_entry(snap, has_position=False)
             if sig.signal_type != SignalType.NONE:
                 pending_signal = (sig, snap, i)
