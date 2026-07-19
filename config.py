@@ -474,7 +474,7 @@ WS_RECONNECT_SEC = 5
 # ──────────────────────────────────────
 # LOGGING
 # ──────────────────────────────────────
-LOG_FILE = os.environ.get("LOG_FILE", "/root/BTC-Bot-v13/journal.db")
+LOG_FILE = os.environ.get("LOG_FILE", "/root/BTC_Bot_v13/journal.db")
 
 # ──────────────────────────────────────
 # SLIPPAGE TRACKING (NEW FIX)
