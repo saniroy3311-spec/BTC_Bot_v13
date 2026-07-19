@@ -14,6 +14,64 @@ const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 
+// ─── Telegram config (set env vars on your VPS) ────────────
+//   TELEGRAM_BOT_TOKEN = your bot token from @BotFather
+//   TELEGRAM_CHAT_ID   = your chat ID (or group ID)
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || null;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || null;
+
+// Track last notified trade IDs so we don't spam duplicates
+const notifiedTrades = new Set();
+
+async function sendTelegram(message) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+  try {
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: message,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true
+      })
+    });
+  } catch (err) {
+    console.error('[Telegram] Failed:', err.message);
+  }
+}
+
+function formatTradeNotification(trade) {
+  const dir = trade.direction === 'long' ? '🟢 LONG' : '🔴 SHORT';
+  const pnl = ((trade.exitPrice - trade.entryPrice) * (trade.direction === 'long' ? 1 : -1) * trade.qty * trade.contractSize).toFixed(2);
+  const symbol = trade.symbol || 'BTCUSD';
+  const reason = trade.exitReason || 'manual';
+  const holdMin = trade.exitTime && trade.entryTime ? Math.round((trade.exitTime - trade.entryTime) / 60000) : '?';
+
+  return (
+    `<b>🤖 Shiva Sniper — Trade Closed</b>\n` +
+    `<b>${dir}</b> ${symbol}\n` +
+    `─────────────────\n` +
+    `Entry: $${Number(trade.entryPrice).toLocaleString()}\n` +
+    `Exit:  $${Number(trade.exitPrice).toLocaleString()}\n` +
+    `P&L:   <b>${pnl >= 0 ? '+' : ''}$${Number(pnl).toLocaleString()}</b>\n` +
+    `Reason: ${reason.toUpperCase()}\n` +
+    `Hold:  ${holdMin}m\n` +
+    `─────────────────\n` +
+    `📊 <a href="http://${process.env.HOST || 'localhost'}:${PORT}/">View Dashboard</a>`
+  );
+}
+
+function formatStatusNotification(status, oldStatus) {
+  const icons = { running: '✅', stopped: '⏹️', error: '⚠️' };
+  return (
+    `<b>${icons[status] || '🔄'} Bot Status Changed</b>\n` +
+    `${oldStatus ? `From: ${oldStatus.toUpperCase()}\n` : ''}` +
+    `To:   <b>${status.toUpperCase()}</b>`
+  );
+}
+
 // ─── In-memory state store ─────────────────────────────────
 let state = {
   botStatus: null,
@@ -81,18 +139,54 @@ async function handleRequest(req, res) {
       state.lastUpdate = Date.now();
 
       // Bot can push any combination of fields
-      if (body.botStatus !== undefined) state.botStatus = body.botStatus;
-      if (body.openTrade !== undefined) state.openTrade = body.openTrade;
+      if (body.botStatus !== undefined) {
+        const oldStatus = state.botStatus ? state.botStatus.status : null;
+        state.botStatus = body.botStatus;
+        if (body.botStatus.status && body.botStatus.status !== oldStatus) {
+          sendTelegram(formatStatusNotification(body.botStatus.status, oldStatus));
+        }
+      }
+      if (body.openTrade !== undefined) {
+        const ot = body.openTrade;
+        state.openTrade = ot;
+        // Notify on new open trade
+        if (ot && ot.direction && ot.entryPrice) {
+          const dirEmoji = ot.direction === 'long' ? '🟢' : '🔴';
+          sendTelegram(
+            `<b>${dirEmoji} Trade Opened</b>\n` +
+            `${ot.direction.toUpperCase()} ${ot.symbol || 'BTCUSD'}\n` +
+            `Entry: $${Number(ot.entryPrice).toLocaleString()}\n` +
+            `SL: $${Number(ot.sl || 0).toLocaleString()} | TP: $${Number(ot.tp || 0).toLocaleString()}`
+          );
+        }
+      }
       if (body.trade) {
         // Single new trade — append or update
         const idx = state.trades.findIndex(t => t.id === body.trade.id);
-        if (idx >= 0) state.trades[idx] = body.trade;
-        else state.trades.push(body.trade);
+        if (idx >= 0) {
+          state.trades[idx] = body.trade;
+        } else {
+          state.trades.push(body.trade);
+          // Notify Telegram only for new trades (not duplicates)
+          if (!notifiedTrades.has(body.trade.id)) {
+            notifiedTrades.add(body.trade.id);
+            sendTelegram(formatTradeNotification(body.trade));
+          }
+        }
       }
-      if (body.trades) state.trades = body.trades;
+      if (body.trades) {
+        state.trades = body.trades;
+        // Reset notified set on bulk replace
+        notifiedTrades.clear();
+        body.trades.forEach(t => notifiedTrades.add(t.id));
+      }
       if (body.currentStep !== undefined) state.currentStep = body.currentStep;
       // Also accept flat fields that match the model directly
-      if (body.status) state.botStatus = { status: body.status, qty: body.qty, contractSize: body.contractSize, timeframe: body.timeframe, lastUpdate: state.lastUpdate };
+      if (body.status) {
+        const oldStatus = state.botStatus ? state.botStatus.status : null;
+        state.botStatus = { status: body.status, qty: body.qty, contractSize: body.contractSize, timeframe: body.timeframe, lastUpdate: state.lastUpdate };
+        if (body.status !== oldStatus) sendTelegram(formatStatusNotification(body.status, oldStatus));
+      }
       if (body.direction) state.openTrade = { direction: body.direction, entryPrice: body.entryPrice, entryTime: body.entryTime, sl: body.sl, tp: body.tp, currentPrice: body.currentPrice, unrealizedPnl: body.unrealizedPnl };
 
       // Keep max 500 trades in memory
