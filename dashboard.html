@@ -242,46 +242,49 @@ table.trade-table .num.neg{color:var(--warning)}
 
   <!-- ===== BACKTEST ===== -->
   <section class="page" id="page-backtest">
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <!-- Performance Banner -->
-      <div class="stats-compact">
-        <div class="stats-row" id="btCapitalRow" style="flex-wrap:wrap">
-          <div class="stat-item"><div class="si-label">Base Capital</div><div class="si-value" id="btBaseCapital">$10,000</div></div>
-          <div class="stat-item"><div class="si-label">Position Size</div><div class="si-value" id="btPositionSize">0.1 BTC</div></div>
-          <div class="stat-item"><div class="si-label">Final Equity</div><div class="si-value" id="btFinalEquity">—</div></div>
-          <div class="stat-item"><div class="si-label">Total Return</div><div class="si-value" id="btReturn">—</div></div>
+    <div class="ov-grid">
+      <div class="ov-left">
+        <div class="wf-panel">
+          <div class="wf-header"><h3>Backtest Summary</h3><span class="wf-stage">2-Year Optimized</span></div>
+          <div id="btSummary" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px"></div>
+        </div>
+        <div class="stats-compact">
+          <div class="stats-row" id="btMetrics" style="flex-wrap:wrap">
+            <div class="stat-item"><div class="si-label">Total Trades</div><div class="si-value" id="btTotal">—</div></div>
+            <div class="stat-item"><div class="si-label">Win Rate</div><div class="si-value" id="btWinRate">—</div></div>
+            <div class="stat-item"><div class="si-label">Net Profit</div><div class="si-value" id="btNetProfit">—</div></div>
+            <div class="stat-item"><div class="si-label">Max Drawdown</div><div class="si-value" id="btMaxDD">—</div></div>
+            <div class="stat-item"><div class="si-label">Max Loss</div><div class="si-value" id="btMaxLoss">—</div></div>
+            <div class="stat-item"><div class="si-label">Max Profit</div><div class="si-value" id="btMaxProfit">—</div></div>
+            <div class="stat-item"><div class="si-label">Avg Monthly</div><div class="si-value" id="btAvgMonthly">—</div></div>
+            <div class="stat-item"><div class="si-label">Profit Factor</div><div class="si-value" id="btProfitFactor">—</div></div>
+          </div>
+        </div>
+        <div class="stats-compact" style="margin-top:0">
+          <div class="stats-row" style="flex-wrap:wrap">
+            <div class="stat-item"><div class="si-label">Base Capital</div><div class="si-value">$10,000</div></div>
+            <div class="stat-item"><div class="si-label">Position</div><div class="si-value">0.1 BTC</div></div>
+            <div class="stat-item"><div class="si-label">Final Equity</div><div class="si-value" id="btFinalEquity">—</div></div>
+            <div class="stat-item"><div class="si-label">Return</div><div class="si-value" id="btReturn">—</div></div>
+          </div>
+        </div>
+        <div class="wf-panel">
+          <div class="wf-header"><h3>Monthly Breakdown</h3></div>
+          <div id="btMonthlyTable" style="max-height:180px;overflow-y:auto;font-size:0.7rem"></div>
         </div>
       </div>
-      <!-- Key Metrics Grid -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px" id="btMetrics">
-        <div class="stat-card" style="padding:12px"><div class="stat-label">Total Trades</div><div class="stat-value" id="btTotal" style="font-size:1.1rem">—</div></div>
-        <div class="stat-card" style="padding:12px"><div class="stat-label">Win Rate</div><div class="stat-value" id="btWinRate" style="font-size:1.1rem">—</div></div>
-        <div class="stat-card" style="padding:12px"><div class="stat-label">Net Profit</div><div class="stat-value" id="btNetProfit" style="font-size:1.1rem">—</div></div>
-        <div class="stat-card" style="padding:12px"><div class="stat-label">Max Drawdown</div><div class="stat-value" id="btMaxDD" style="font-size:1.1rem">—</div></div>
-        <div class="stat-card" style="padding:12px"><div class="stat-label">Max Loss</div><div class="stat-value" id="btMaxLoss" style="font-size:1.1rem">—</div></div>
-        <div class="stat-card" style="padding:12px"><div class="stat-label">Max Profit</div><div class="stat-value" id="btMaxProfit" style="font-size:1.1rem">—</div></div>
-        <div class="stat-card" style="padding:12px"><div class="stat-label">Avg Monthly</div><div class="stat-value" id="btAvgMonthly" style="font-size:1.1rem">—</div></div>
-        <div class="stat-card" style="padding:12px"><div class="stat-label">Profit Factor</div><div class="stat-value" id="btProfitFactor" style="font-size:1.1rem">—</div></div>
-      </div>
-      <!-- Charts -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="ov-right">
         <div class="chart-panel">
           <h3>Equity Curve (2-Year)</h3>
           <canvas id="btEquityChart" style="max-height:200px"></canvas>
         </div>
         <div class="chart-panel">
           <h3>Monthly P/L</h3>
-          <canvas id="btMonthlyPNL" style="max-height:200px"></canvas>
+          <canvas id="btMonthlyPNL" style="max-height:160px"></canvas>
         </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="chart-panel">
           <h3>Monthly Trade Count</h3>
-          <canvas id="btMonthlyChart" style="max-height:160px"></canvas>
-        </div>
-        <div class="wf-panel">
-          <div class="wf-header"><h3>Monthly Breakdown</h3></div>
-          <div id="btMonthlyTable" style="max-height:200px;overflow-y:auto;font-size:0.72rem"></div>
+          <canvas id="btMonthlyChart" style="max-height:140px"></canvas>
         </div>
       </div>
     </div>
@@ -505,15 +508,22 @@ function renderBacktest(){
   const mKeys=Object.keys(months).sort();
   const avgMonthly=mKeys.length?mKeys.reduce((s,k)=>s+pnlByMonth[k],0)/mKeys.length:0;
 
-  // Update metrics
+  // Update metrics — summary boxes
+  const losses=total-wins;
+  document.getElementById('btSummary').innerHTML=[
+    {l:'Wins',v:wins,c:'pos'},{l:'Losses',v:losses,c:'neg'},
+    {l:'Avg Win',v:wins?fu(grossWins/wins):'$0',c:'pos'},
+    {l:'Avg Loss',v:losses?fu(grossLosses/losses):'$0',c:'neg'},
+  ].map(x=>'<div style="background:var(--surface);border:var(--card-border);padding:8px 10px;text-align:center"><div style="font-size:0.55rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink-light)">'+x.l+'</div><div style="font-size:0.85rem;font-weight:700;color:'+(x.c==='pos'?'var(--success)':'var(--warning)')+'">'+x.v+'</div></div>').join('');
+
   document.getElementById('btTotal').textContent=total;
   document.getElementById('btWinRate').textContent=wr.toFixed(1)+'%';
-  const npEl=document.getElementById('btNetProfit');npEl.textContent=fu(netTotal);npEl.className='stat-value '+(netTotal>=0?'positive':'negative');
+  const npEl=document.getElementById('btNetProfit');npEl.textContent=fu(netTotal);npEl.className='si-value '+(netTotal>=0?'pos':'neg');
   document.getElementById('btMaxDD').textContent=fu(maxDD);
-  const mlEl=document.getElementById('btMaxLoss');mlEl.textContent=fu(maxLoss);mlEl.className='stat-value negative';
-  const mpEl=document.getElementById('btMaxProfit');mpEl.textContent=fu(maxProfit);mpEl.className='stat-value positive';
+  const mlEl=document.getElementById('btMaxLoss');mlEl.textContent=fu(maxLoss);mlEl.className='si-value neg';
+  const mpEl=document.getElementById('btMaxProfit');mpEl.textContent=fu(maxProfit);mpEl.className='si-value pos';
   document.getElementById('btAvgMonthly').textContent=fu(avgMonthly);
-  const amEl=document.getElementById('btAvgMonthly');amEl.className='stat-value '+(avgMonthly>=0?'positive':'negative');
+  const amEl=document.getElementById('btAvgMonthly');amEl.className='si-value '+(avgMonthly>=0?'pos':'neg');
   document.getElementById('btProfitFactor').textContent=pf.toFixed(2);
   document.getElementById('btFinalEquity').textContent=fu(finalEquity);
   const retEl=document.getElementById('btReturn');retEl.textContent=(retPct>=0?'+':'')+retPct.toFixed(1)+'%';retEl.className='si-value '+(retPct>=0?'pos':'neg');
@@ -545,5 +555,5 @@ function renderBacktest(){
 
 // ─── Init ───
 poll();setInterval(poll,2000);
-btTrades=generateBacktestData(); // pre-generate, render on tab click
+btTrades=generateOptData(); // pre-generate, render on tab click
 </script></body></html>
