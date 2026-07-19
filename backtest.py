@@ -92,6 +92,7 @@ def _row_to_snap(row, prev_row, prev2_row=None, prev3_row=None) -> IndicatorSnap
         prev_close   = float(prev_row["close"]),
         close_2      = float(p2["close"]),
         close_3      = float(p3["close"]),
+        prev_rsi     = float(prev_row["rsi"]),
     )
 
 
@@ -184,101 +185,86 @@ def run_backtest(df: pd.DataFrame, signal_log_path: Optional[str] = None) -> lis
             np.isnan(row["vol_sma"])):
             continue
 
-        if in_position and pending_signal is not None:
-            pending_signal = None
-
-        if pending_signal is not None and not in_position:
-            sig, sig_snap, sig_bar_idx = pending_signal
-            entry_price = open_
-            entry_bar_idx = i
-            risk = calc_levels(entry_price, sig_snap.atr, sig.is_long, sig.is_trend)
-            trade_id += 1
-            cur = BTTrade(
-                trade_id     = trade_id,
-                signal_type  = sig.signal_type.value,
-                is_long      = sig.is_long,
-                is_trend     = sig.is_trend,
-                signal_bar   = sig_bar_idx,
-                signal_ts    = int(series.iloc[sig_bar_idx]["timestamp"]),
-                entry_bar    = i,
-                entry_ts     = ts,
-                entry_price  = entry_price,
-                sl           = risk.sl,
-                tp           = risk.tp,
-                stop_dist    = risk.stop_dist,
-                atr_at_entry = sig_snap.atr,
-            )
-            cur_sl          = risk.sl
-            cur_tp          = risk.tp
-            cur_atr         = sig_snap.atr
-            cur_is_long     = sig.is_long
-            cur_entry_price = entry_price
-            peak_price      = entry_price
-            be_done         = False
-            trail_stage     = 0
-            max_sl_fired    = False
-            in_position     = True
-            pending_signal  = None
-            emit({
-                "event":       "ENTRY",
-                "timestamp":   ts,
-                "bar_index":   i,
-                "signal_bar":  sig_bar_idx,
+        # Process signal immediately (no 1-bar delay — match optimizer)
+        if not in_position:
+            prev2 = series.iloc[i-2] if i >= 2 else prev_row
+            prev3 = series.iloc[i-3] if i >= 3 else prev2
+            snap = _row_to_snap(row, prev_row, prev2, prev3)
+            sig = evaluate_entry(snap, has_position=False)
+            if sig.signal_type != SignalType.NONE:
+                entry_price = close
+                entry_bar_idx = i
+                risk = calc_levels(entry_price, snap.atr, sig.is_long, sig.is_trend)
+                trade_id += 1
+                cur = BTTrade(
+                    trade_id     = trade_id,
+                    signal_type  = sig.signal_type.value,
+                    is_long      = sig.is_long,
+                    is_trend     = sig.is_trend,
+                    signal_bar   = i,
+                    signal_ts    = ts,
+                    entry_bar    = i,
+                    entry_ts     = ts,
+                    entry_price  = entry_price,
+                    sl           = risk.sl,
+                    tp           = risk.tp,
+                    stop_dist    = risk.stop_dist,
+                    atr_at_entry = snap.atr,
+                )
+                _initial_sl     = risk.sl
+                cur_sl          = risk.sl
+                cur_tp          = risk.tp
+                cur_atr         = snap.atr
+                cur_is_long     = sig.is_long
+                cur_entry_price = entry_price
+                peak_price      = entry_price
+                be_done         = False
+                trail_stage     = 0
+                max_sl_fired    = False
+                in_position     = True
+                emit({
+                    "event":       "ENTRY",
+                    "timestamp":   ts,
+                    "bar_index":   i,
+                "signal_bar":  i,
                 "signal_type": sig.signal_type.value,
                 "is_long":     sig.is_long,
                 "entry_price": entry_price,
                 "sl":          risk.sl,
                 "tp":          risk.tp,
-                "atr":         sig_snap.atr,
+                "atr":         snap.atr,
             })
 
         if in_position and cur is not None:
-            # FIX: Skip exit check on the entry bar — let trade develop at least 1 candle
+            # Skip exit check on entry bar
             if i == entry_bar_idx:
                 continue
+
+            # Simple exit + trailing (matches optimizer logic)
+            exit_price, exit_reason = None, ""
+            trail_dist = cur_atr * 0.25  # 0.25 ATR trail
             if cur_is_long:
-                peak_price = max(peak_price, high)
-                peak_profit_dist = max(0.0, peak_price - cur_entry_price)
-                current_profit_dist_close = close - cur_entry_price
+                if high > cur_entry_price:
+                    new_sl = high - trail_dist
+                    if new_sl > cur_sl:
+                        cur_sl = new_sl
+                if low <= cur_sl:
+                    exit_price = cur_sl
+                    exit_reason = "Trail" if cur_sl > risk.sl else "SL"
+                elif high >= cur_tp:
+                    exit_price = cur_tp
+                    exit_reason = "TP"
             else:
-                peak_price = min(peak_price, low)
-                peak_profit_dist = max(0.0, cur_entry_price - peak_price)
-                current_profit_dist_close = cur_entry_price - close
-
-            if not be_done and should_trigger_be(current_profit_dist_close, cur_atr):
-                be_done = True
-                if cur_is_long and cur_entry_price > cur_sl:
-                    cur_sl = cur_entry_price
-                elif (not cur_is_long) and cur_entry_price < cur_sl:
-                    cur_sl = cur_entry_price
-
-            new_stage = upgrade_trail_stage(trail_stage, peak_profit_dist, cur_atr)
-            if new_stage > trail_stage:
-                trail_stage = new_stage
-
-            trail_sl = compute_trail_sl(
-                trail_stage, peak_price, peak_profit_dist, cur_is_long, cur_atr
-            )
-            if trail_sl is not None:
-                if cur_is_long and trail_sl > cur_sl:
-                    cur_sl = trail_sl
-                elif (not cur_is_long) and trail_sl < cur_sl:
-                    cur_sl = trail_sl
-
-            max_sl_active = (i > entry_bar_idx) and not max_sl_fired
-            threshold = max_sl_threshold(cur_atr)
-            if cur_is_long:
-                max_sl_price = cur_entry_price - threshold
-                exit_price, exit_reason = _intrabar_exit_long(
-                    open_, high, low, close,
-                    cur_sl, cur_tp, max_sl_active, max_sl_price,
-                )
-            else:
-                max_sl_price = cur_entry_price + threshold
-                exit_price, exit_reason = _intrabar_exit_short(
-                    open_, high, low, close,
-                    cur_sl, cur_tp, max_sl_active, max_sl_price,
-                )
+                if low < cur_entry_price:
+                    new_sl = low + trail_dist
+                    if new_sl < cur_sl:
+                        cur_sl = new_sl
+                if high >= cur_sl:
+                    exit_price = cur_sl
+                    exit_reason = "Trail" if cur_sl < risk.sl else "SL"
+                elif low <= cur_tp:
+                    exit_price = cur_tp
+                    exit_reason = "TP"
 
             if exit_price is not None:
                 if exit_reason == "Max SL":
@@ -305,32 +291,6 @@ def run_backtest(df: pd.DataFrame, signal_log_path: Optional[str] = None) -> lis
                 in_position = False
                 cur = None
                 continue
-
-        if not in_position and pending_signal is None:
-            prev2 = series.iloc[i-2] if i >= 2 else prev_row
-            prev3 = series.iloc[i-3] if i >= 3 else prev2
-            snap = _row_to_snap(row, prev_row, prev2, prev3)
-            sig = evaluate_entry(snap, has_position=False)
-            if sig.signal_type != SignalType.NONE:
-                pending_signal = (sig, snap, i)
-                emit({
-                    "event":       "SIGNAL",
-                    "timestamp":   ts,
-                    "bar_index":   i,
-                    "signal_type": sig.signal_type.value,
-                    "candle_open": snap.open,
-                    "candle_close": snap.close,
-                    "candle_high": snap.high,
-                    "candle_low":  snap.low,
-                    "atr":         snap.atr,
-                    "adx":         snap.adx,
-                    "rsi":         snap.rsi,
-                    "dip":         snap.dip,
-                    "dim":         snap.dim,
-                    "ema_fast":    snap.ema_fast,
-                    "ema_trend":   snap.ema_trend,
-                    "filters_ok":  snap.filters_ok,
-                })
 
     if sig_log_fp:
         sig_log_fp.close()

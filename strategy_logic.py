@@ -68,6 +68,7 @@ class IndicatorSnapshot:
     prev_close:   float
     close_2:      float
     close_3:      float
+    prev_rsi:     float
 
 
 def _first_valid_idx(arr: np.ndarray) -> int:
@@ -268,22 +269,26 @@ def compute(df: pd.DataFrame) -> IndicatorSnapshot:
         prev_close   = float(prev["close"]),
         close_2      = float(prev2["close"]),
         close_3      = float(prev3["close"]),
+        prev_rsi     = float(prev["rsi"]),
     )
 
 
+# No-reprint gate state (last signal hash, shared across calls)
+_last_signal_hash = ""
+
 def evaluate_entry(snap: IndicatorSnapshot, has_position: bool) -> Signal:
+    global _last_signal_hash
     if has_position:
         return Signal(SignalType.NONE, False, False, "none")
 
-    # RSIMom+M3 — standalone, no ADX/DMI dependency
     trend_up = snap.ema_fast > snap.ema_trend
     trend_dn = snap.ema_fast < snap.ema_trend
     vol_ok = snap.volume > snap.vol_sma * VOL_MULT
 
-    # RSIMom Long: uptrend + RSI > threshold + price above EMA20 + volume
-    rml = trend_up and snap.rsi > RSI_LONG and snap.close > snap.ema20 and vol_ok
-    # RSIMom Short: downtrend + RSI < threshold + price below EMA20 + volume
-    rms = trend_dn and snap.rsi < RSI_SHORT and snap.close < snap.ema20 and vol_ok
+    # RSIMom Long: uptrend + RSI crossover (> threshold, prev <=) + price > EMA20 + volume
+    rml = trend_up and snap.rsi > RSI_LONG and snap.prev_rsi <= RSI_LONG and snap.close > snap.ema20 and vol_ok
+    # RSIMom Short: downtrend + RSI crossunder (< threshold, prev >=) + price < EMA20 + volume
+    rms = trend_dn and snap.rsi < RSI_SHORT and snap.prev_rsi >= RSI_SHORT and snap.close < snap.ema20 and vol_ok
     # M3 Long: 3 higher closes + above EMA20 + volume
     m3l = (snap.close > snap.ema20 and snap.ema20 > snap.ema_fast and
            snap.close > snap.prev_close and snap.prev_close > snap.close_2 and
@@ -293,10 +298,22 @@ def evaluate_entry(snap: IndicatorSnapshot, has_position: bool) -> Signal:
            snap.close < snap.prev_close and snap.prev_close < snap.close_2 and
            snap.close_2 < snap.close_3 and vol_ok)
 
-    if rml: return Signal(SignalType.TREND_LONG, True, True, "rsimom_long")
-    if rms: return Signal(SignalType.TREND_SHORT, False, True, "rsimom_short")
-    if m3l: return Signal(SignalType.TREND_LONG, True, True, "m3_long")
-    if m3s: return Signal(SignalType.TREND_SHORT, False, True, "m3_short")
+    # Build signal hash for no-reprint
+    sig_hash = ""
+    if rml: sig_hash = "rml"
+    elif rms: sig_hash = "rms"
+    elif m3l: sig_hash = "m3l"
+    elif m3s: sig_hash = "m3s"
+
+    if sig_hash and sig_hash != _last_signal_hash:
+        _last_signal_hash = sig_hash
+        if rml: return Signal(SignalType.TREND_LONG, True, True, "rsimom_long")
+        if rms: return Signal(SignalType.TREND_SHORT, False, True, "rsimom_short")
+        if m3l: return Signal(SignalType.TREND_LONG, True, True, "m3_long")
+        if m3s: return Signal(SignalType.TREND_SHORT, False, True, "m3_short")
+
+    if not sig_hash:
+        _last_signal_hash = ""
     return Signal(SignalType.NONE, False, False, "none")
 
 
