@@ -105,7 +105,7 @@ h1,h2,h3,h4,.font-heading{
   50%{opacity:0.5;transform:scale(0.75)}
 }
 
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
 .stat-card{background:var(--surface);border:var(--card-border);padding:16px 18px}
 .stat-card .stat-label{
   font-size:0.72rem;font-weight:500;text-transform:uppercase;
@@ -262,7 +262,6 @@ table.trade-table .num.neg{color:var(--warning)}
     </div>
     <div class="stat-grid" id="statGrid">
       <div class="stat-card"><div class="stat-label">Quantity (lots)</div><div class="stat-value" id="statQty">—</div></div>
-      <div class="stat-card"><div class="stat-label">Contract Size</div><div class="stat-value" id="statContract">—</div></div>
       <div class="stat-card"><div class="stat-label">Timeframe</div><div class="stat-value" id="statTimeframe">—</div></div>
       <div class="stat-card"><div class="stat-label">Open Trade</div><div class="stat-value" id="statDirection">—</div><div class="stat-sub" id="statDirectionSub">Awaiting data</div></div>
     </div>
@@ -497,7 +496,6 @@ function renderOverview() {
     document.getElementById('statusLabel').textContent = bot.status.charAt(0).toUpperCase() + bot.status.slice(1);
     document.getElementById('lastUpdateLabel').textContent = 'Last update: ' + fmtTime(bot.lastUpdate);
     document.getElementById('statQty').textContent = bot.qty || '—';
-    document.getElementById('statContract').textContent = bot.contractSize ? bot.contractSize + ' BTC' : '—';
     document.getElementById('statTimeframe').textContent = bot.timeframe || '—';
   }
 
