@@ -1,0 +1,27 @@
+{
+  "ADX_TREND_TH": 22,
+  "ADX_RANGE_TH": 5,
+  "FILTER_ATR_MULT": 1.4,
+  "FILTER_VOL_ENABLED": true,
+  "FILTER_VOL_MULT": 1.0,
+  "TREND_RR": 2.5,
+  "RANGE_RR": 2.5,
+  "TREND_ATR_MULT": 0.6,
+  "RANGE_ATR_MULT": 0.5,
+  "MAX_SL_MULT": 1.5,
+  "MAX_SL_POINTS": 500,
+  "BE_MULT": 0.5,
+  "RSI_OB": 70,
+  "RSI_OS": 30,
+  "BREAKOUT_BUFFER_PTS": 0,
+  "COMMISSION_PCT": 0.0005,
+  "TP_HARD_EXIT": true,
+  "PINE_MINTICK": 0.5,
+  "TRAIL_STAGES": [
+    [
+      10.0,
+      10.0,
+      10.0
+    ]
+  ]
+}

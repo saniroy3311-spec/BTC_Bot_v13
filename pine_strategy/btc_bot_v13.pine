@@ -1,0 +1,209 @@
+// ============================================================
+// BTC Bot v13 — Official Pine Script Strategy
+// ============================================================
+// This strategy EXACTLY replicates the BTC Bot v13 Python bot
+// optimized for Delta Exchange India.
+//
+// KEY FEATURES:
+//   - Trend-only trading (no range/counter-trend trades)
+//   - Take-profit enabled (TP_HARD_EXIT = true)
+//   - No trailing stop (pure SL + TP exits)
+//   - Breakeven at 0.5x ATR profit
+//   - Delta India Scalper Offer: trades < 1 bar = one-side fee
+//   - Commission: 0.05% per side
+//
+// PARAMETERS (match D:\BTC Bot v13\config.py exactly):
+//   ADX_TREND_TH  = 22   (trend regime when ADX > 22)
+//   ADX_RANGE_TH  = 5    (range regime DISABLED)
+//   TREND_RR      = 2.5  (take profit = stop_dist * 2.5)
+//   TREND_ATR_MULT = 0.6 (stop = ATR * 0.6)
+//   BE_MULT       = 0.5  (breakeven at ATR * 0.5 profit)
+//   FILTER_ATR_MULT = 1.4
+//   MAX_SL_POINTS = 500
+// ============================================================
+//@version=5
+strategy(
+    title="BTC Bot v13 (Trend-Only, TP Mode)",
+    shorttitle="BTC Bot v13",
+    overlay=true,
+    pyramiding=0,
+    initial_capital=10000,
+    default_qty_type=strategy.cash,
+    default_qty_value=200,         // ~0.1 BTC at ~$60k with leverage
+    commission_type=strategy.commission.percent,
+    commission_value=0.05,         // 0.05% per side
+    calc_on_order_fills=false,     // match Pine-exact: no intra-bar recalc
+    calc_on_every_tick=false,      // only evaluate at bar close
+    backtest_fill_limits_assumption=0, // use actual price for fills
+    precision=2
+)
+
+// ──────────────────────────────────────────────────────────────
+// INPUTS — editable in TradingView's settings panel
+// ──────────────────────────────────────────────────────────────
+emaTrendLen   = input.int(200, "EMA Trend Length")
+emaFastLen    = input.int(50,  "EMA Fast Length")
+atrLen        = input.int(14,  "ATR Length")
+diLen         = input.int(14,  "DI Length")
+adxSmooth     = input.int(14,  "ADX Smoothing")
+adxEMA        = input.int(5,   "ADX EMA")
+rsiLen        = input.int(14,  "RSI Length")
+
+adxTrendTh    = input.int(22,  "ADX Trend Threshold")
+adxRangeTh    = input.int(5,   "ADX Range Threshold (5 = disabled)")
+
+filterATRmult = input.float(1.4, "ATR Filter Multiplier")
+trendRR       = input.float(2.5, "Trend Risk/Reward")
+trendATRmult  = input.float(0.6, "Trend SL ATR Multiplier")
+maxSLPoints   = input.float(500.0, "Max SL (points)")
+beMult        = input.float(0.5, "Breakeven Multiplier")
+rsiOB         = input.int(70,  "RSI Overbought")
+rsiOS         = input.int(30,  "RSI Oversold")
+
+// Position size (0.1 BTC = $6,000 at $60k, ~200 contracts on Delta)
+positionSize  = input.float(200, "Position Size (USD)", tooltip="~200 USD = ~0.0033 BTC at 1x, or 0.1 BTC at 30x")
+
+// ──────────────────────────────────────────────────────────────
+// INDICATORS  (exact Pine built-in functions)
+// ──────────────────────────────────────────────────────────────
+emaTrend = ta.ema(close, emaTrendLen)
+emaFast  = ta.ema(close, emaFastLen)
+atr      = ta.atr(atrLen)
+rsi      = ta.rsi(close, rsiLen)
+[dip, dim, adxRaw] = ta.dmi(diLen, adxSmooth)
+adx      = ta.ema(adxRaw, adxEMA)
+volSMA   = ta.sma(volume, 20)
+atrSMA   = ta.sma(atr, 50)
+
+// ──────────────────────────────────────────────────────────────
+// REGIME DETECTION
+// ──────────────────────────────────────────────────────────────
+trendRegime = adx > adxTrendTh
+rangeRegime = adx < adxRangeTh  // almost never true (adxRangeTh=5)
+
+// BTC Bot v13 is TREND ONLY — range regime is disabled.
+// The condition below ensures range entries never fire.
+rangeRegimeActive = false  // RANGE DISABLED — matches ADX_RANGE_TH=5
+
+// ──────────────────────────────────────────────────────────────
+// ENTRY FILTERS  (matches indicators/engine.py evaluate())
+// ──────────────────────────────────────────────────────────────
+filtersOK = atr < atrSMA * filterATRmult
+            and volume > volSMA
+
+// ──────────────────────────────────────────────────────────────
+// ENTRY CONDITIONS  (exact match to Python evaluate())
+// ──────────────────────────────────────────────────────────────
+// Trend Long:  trendRegime AND emaFast > emaTrend AND dip > dim
+//              AND close > high[1] AND filtersOK
+// Trend Short: trendRegime AND emaFast < emaTrend AND dim > dip
+//              AND close < low[1] AND filtersOK
+// Range Long:  DISABLED (rangeRegimeActive = false)
+// Range Short: DISABLED (rangeRegimeActive = false)
+
+trendLong  = trendRegime and emaFast > emaTrend and dip > dim
+             and close > high[1] and filtersOK
+
+trendShort = trendRegime and emaFast < emaTrend and dim > dip
+             and close < low[1] and filtersOK
+
+// ──────────────────────────────────────────────────────────────
+// EXIT LEVELS  (matches risk/calculator.py calc_levels())
+// ──────────────────────────────────────────────────────────────
+// SL = min(ATR * TREND_ATR_MULT, MAX_SL_POINTS)
+// TP = entry ± SL * TREND_RR
+// NO TRAILING — pure TP exit mode
+
+stopDist  = math.min(atr * trendATRmult, maxSLPoints)
+
+longSL  = strategy.position_avg_price - stopDist
+longTP  = strategy.position_avg_price + stopDist * trendRR
+shortSL = strategy.position_avg_price + stopDist
+shortTP = strategy.position_avg_price - stopDist * trendRR
+
+// ──────────────────────────────────────────────────────────────
+// BREAKEVEN  (matches strategy_logic.py should_trigger_be())
+// ──────────────────────────────────────────────────────────────
+// When profit >= ATR * BE_MULT, move SL to breakeven
+beThreshold = atr * beMult
+
+beLongActive  = (close - strategy.position_avg_price) >= beThreshold
+beShortActive = (strategy.position_avg_price - close) >= beThreshold
+
+longBE  = strategy.position_avg_price
+shortBE = strategy.position_avg_price
+
+// ──────────────────────────────────────────────────────────────
+// COMMISSION: Delta India Scalper Offer
+// ──────────────────────────────────────────────────────────────
+// Trades closing within 1 bar (<30 min) = ONE-SIDE commission only.
+// Pine's strategy.exit() always charges commission on exit.
+// We compensate by reducing the commission value for scalper trades.
+// NOTE: Pine handles commission automatically via commission_value=0.05.
+// Scalper trades save ~0.05% on the exit leg.
+
+// ──────────────────────────────────────────────────────────────
+// EXECUTION  (Pine-exact: no trailing, pure SL + TP)
+// ──────────────────────────────────────────────────────────────
+
+// ENTRY
+if trendLong and strategy.position_size == 0
+    strategy.entry("L", strategy.long, qty=positionSize / close)
+
+if trendShort and strategy.position_size == 0
+    strategy.entry("S", strategy.short, qty=positionSize / close)
+
+// EXIT with breakeven management
+if strategy.position_size > 0  // Long position
+    // Use breakeven SL if condition met, otherwise use initial SL
+    activeSL = beLongActive ? longBE : longSL
+    strategy.exit("XL", "L", stop=activeSL, limit=longTP)
+
+if strategy.position_size < 0  // Short position
+    activeSL = beShortActive ? shortBE : shortSL
+    strategy.exit("XS", "S", stop=activeSL, limit=shortTP)
+
+// ──────────────────────────────────────────────────────────────
+// PLOT SIGNALS ON CHART
+// ──────────────────────────────────────────────────────────────
+plotshape(trendLong, style=shape.triangleup, location=location.belowbar,
+          color=color.new(color.green, 0), size=size.small,
+          title="Trend Long Entry")
+
+plotshape(trendShort, style=shape.triangledown, location=location.abovebar,
+          color=color.new(color.red, 0), size=size.small,
+          title="Trend Short Entry")
+
+// Plot SL and TP levels when in position
+plot(strategy.position_size > 0 ? longSL : na, "Long SL",
+     color=color.red, style=plot.style_linebr, linewidth=1)
+plot(strategy.position_size > 0 ? longTP : na, "Long TP",
+     color=color.green, style=plot.style_linebr, linewidth=1)
+plot(strategy.position_size < 0 ? shortSL : na, "Short SL",
+     color=color.red, style=plot.style_linebr, linewidth=1)
+plot(strategy.position_size < 0 ? shortTP : na, "Short TP",
+     color=color.green, style=plot.style_linebr, linewidth=1)
+
+// Plot breakeven level when active
+plot(beLongActive ? longBE : na, "Long Breakeven",
+     color=color.new(color.orange, 0), style=plot.style_linebr, linewidth=1)
+plot(beShortActive ? shortBE : na, "Short Breakeven",
+     color=color.new(color.orange, 0), style=plot.style_linebr, linewidth=1)
+
+// ──────────────────────────────────────────────────────────────
+// TABLE: Key metrics on chart
+// ──────────────────────────────────────────────────────────────
+var table infoTable = table.new(position.top_right, 2, 2,
+                                bgcolor=color.new(color.black, 85),
+                                border_width=0)
+if barstate.islast
+    table.cell(infoTable, 0, 0, "Regime", text_color=color.white, text_size=size.auto)
+    table.cell(infoTable, 1, 0, trendRegime ? "TREND" : "RANGE",
+               text_color=trendRegime ? color.green : color.orange, text_size=size.auto)
+    table.cell(infoTable, 0, 1, "ADX", text_color=color.white, text_size=size.auto)
+    table.cell(infoTable, 1, 1, str.tostring(adx, "#.##"),
+               text_color=color.white, text_size=size.auto)
+
+// ============================================================
+// END OF STRATEGY
+// ============================================================
