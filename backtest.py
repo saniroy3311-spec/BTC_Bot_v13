@@ -227,6 +227,9 @@ def run_backtest(df: pd.DataFrame, signal_log_path: Optional[str] = None) -> lis
             })
 
         if in_position and cur is not None:
+            # FIX: Skip exit check on the entry bar — let trade develop at least 1 candle
+            if i == entry_bar_idx:
+                continue
             if cur_is_long:
                 peak_price = max(peak_price, high)
                 peak_profit_dist = max(0.0, peak_price - cur_entry_price)

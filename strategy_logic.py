@@ -14,10 +14,11 @@ from config import (
     ADX_TREND_TH, ADX_RANGE_TH,
     FILTER_ATR_MULT, FILTER_BODY_MULT, FILTER_VOL_ENABLED, FILTER_VOL_MULT,
     RSI_OB, RSI_OS,
+    RSI_LONG, RSI_SHORT, VOL_MULT,
     TREND_RR, RANGE_RR, TREND_ATR_MULT, RANGE_ATR_MULT,
     MAX_SL_MULT, MAX_SL_POINTS, TRAIL_STAGES, BE_MULT, PINE_MINTICK,
     COMMISSION_PCT,
-    BREAKOUT_BUFFER_PTS,   # FIX-BREAKOUT-BUFFER: wire config into entry filter
+    BREAKOUT_BUFFER_PTS,
 )
 
 
@@ -41,6 +42,7 @@ class Signal:
 class IndicatorSnapshot:
     ema_trend:    float
     ema_fast:     float
+    ema20:        float
     atr:          float
     rsi:          float
     dip:          float
@@ -63,6 +65,9 @@ class IndicatorSnapshot:
     prev_high:    float
     prev_low:     float
     timestamp:    int
+    prev_close:   float
+    close_2:      float
+    close_3:      float
 
 
 def _first_valid_idx(arr: np.ndarray) -> int:
@@ -186,6 +191,7 @@ def compute_full_series(df: pd.DataFrame) -> pd.DataFrame:
 
     out["ema200"] = _ema(close, EMA_TREND_LEN).values
     out["ema50"]  = _ema(close, EMA_FAST_LEN).values
+    out["ema20"]  = _ema(close, 20).values
 
     atr = _atr(high, low, close, ATR_LEN)
     out["atr"]     = atr.values
@@ -230,9 +236,13 @@ def compute(df: pd.DataFrame) -> IndicatorSnapshot:
     trend_regime = bool(adx_v > ADX_TREND_TH)
     range_regime = bool(adx_v < ADX_RANGE_TH)
 
+    prev2 = series.iloc[-3] if len(series) >= 3 else prev
+    prev3 = series.iloc[-4] if len(series) >= 4 else prev2
+
     return IndicatorSnapshot(
         ema_trend    = float(last["ema200"]),
         ema_fast     = float(last["ema50"]),
+        ema20        = float(last["ema20"]),
         atr          = atr_v,
         rsi          = float(last["rsi"]),
         dip          = float(last["dip"]),
@@ -255,6 +265,9 @@ def compute(df: pd.DataFrame) -> IndicatorSnapshot:
         prev_high    = float(prev["high"]),
         prev_low     = float(prev["low"]),
         timestamp    = int(last["timestamp"]),
+        prev_close   = float(prev["close"]),
+        close_2      = float(prev2["close"]),
+        close_3      = float(prev3["close"]),
     )
 
 
@@ -262,40 +275,53 @@ def evaluate_entry(snap: IndicatorSnapshot, has_position: bool) -> Signal:
     if has_position:
         return Signal(SignalType.NONE, False, False, "none")
 
-    f  = snap.filters_ok
-    tr = snap.trend_regime
-    rg = snap.range_regime
+    # RSIMom+M3 strategy — replaces ADX/DMI based logic
+    vol_ok = snap.vol_ok and snap.volume > snap.vol_sma * VOL_MULT
+    f = snap.filters_ok and vol_ok
 
-    # FIX-BREAKOUT-BUFFER: Pine runs on TradingView's BTCUSD.P feed; the bot
-    # runs on Delta India's feed (~120pt premium typical). Without a buffer
-    # the bot fires on micro-breakouts that Pine never sees, producing
-    # entries Pine wouldn't take. BREAKOUT_BUFFER_PTS (config.py, default 20)
-    # filters those out.
-    trend_long = (
-        tr
-        and snap.ema_fast > snap.ema_trend
-        and snap.dip > snap.dim
-        and snap.close > snap.prev_high + BREAKOUT_BUFFER_PTS
+    # RSIMom Long: uptrend + RSI crosses above threshold + price above EMA20 + volume
+    rml = (
+        snap.ema_fast > snap.ema_trend
+        and snap.rsi > RSI_LONG
+        and snap.rsi <= RSI_LONG  # first bar above threshold (will be handled by no-reprint)
+        and snap.close > snap.ema20
         and f
     )
-    trend_short = (
-        tr
-        and snap.ema_fast < snap.ema_trend
-        and snap.dim > snap.dip
-        and snap.close < snap.prev_low - BREAKOUT_BUFFER_PTS
+    # RSIMom Short: downtrend + RSI crosses below threshold + price below EMA20 + volume
+    rms = (
+        snap.ema_fast < snap.ema_trend
+        and snap.rsi < RSI_SHORT
+        and snap.close < snap.ema20
         and f
     )
-    range_long  = rg and snap.rsi < RSI_OS and f
-    range_short = rg and snap.rsi > RSI_OB and f
+    # M3 Long: 3 consecutive higher closes + volume
+    m3l = (
+        snap.close > snap.ema20
+        and snap.ema20 > snap.ema_fast
+        and snap.close > snap.prev_close
+        and snap.prev_close > snap.close_2
+        and snap.close_2 > snap.close_3
+        and f
+    )
+    # M3 Short: 3 consecutive lower closes + volume
+    m3s = (
+        snap.close < snap.ema20
+        and snap.ema20 < snap.ema_fast
+        and snap.close < snap.prev_close
+        and snap.prev_close < snap.close_2
+        and snap.close_2 < snap.close_3
+        and f
+    )
 
-    if trend_long:
-        return Signal(SignalType.TREND_LONG,  True,  True,  "trend")
-    if trend_short:
-        return Signal(SignalType.TREND_SHORT, False, True,  "trend")
-    if range_long:
-        return Signal(SignalType.RANGE_LONG,  True,  False, "range")
-    if range_short:
-        return Signal(SignalType.RANGE_SHORT, False, False, "range")
+    # No-reprint gate using signal hash
+    if rml:
+        return Signal(SignalType.TREND_LONG, True, True, "rsimom_long")
+    if rms:
+        return Signal(SignalType.TREND_SHORT, False, True, "rsimom_short")
+    if m3l:
+        return Signal(SignalType.TREND_LONG, True, True, "m3_long")
+    if m3s:
+        return Signal(SignalType.TREND_SHORT, False, True, "m3_short")
     return Signal(SignalType.NONE, False, False, "none")
 
 

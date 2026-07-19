@@ -167,6 +167,11 @@ FILTER_BODY_TOLERANCE = float(os.environ.get("FILTER_BODY_TOLERANCE", "0.0"))
 FILTER_VOL_ENABLED = os.environ.get("FILTER_VOL_ENABLED", "true").lower() == "true"
 FILTER_VOL_MULT    = float(os.environ.get("FILTER_VOL_MULT", "1.0"))
 
+# ─── RSIMom+M3 strategy params (optimized) ────────────
+RSI_LONG  = float(os.environ.get("RSI_LONG",  "58"))
+RSI_SHORT = float(os.environ.get("RSI_SHORT", "42"))
+VOL_MULT  = float(os.environ.get("VOL_MULT",  "1.3"))
+
 # ─────────────────────────────────────
 # RISK / REWARD  (PINE-ALIGNED)
 # ──────────────────────────────────────
