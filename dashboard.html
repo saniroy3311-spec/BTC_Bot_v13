@@ -10,7 +10,7 @@
 html{font-size:16px;-webkit-text-size-adjust:100%}
 body{
   font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  background:#F5F1E8;color:#1F2A24;line-height:1.5;min-height:100vh
+  background:#F5F1E8;color:#1F2A24;line-height:1.5
 }
 :root{
   --bg:#F5F1E8;--surface:#FFFFFF;--primary:#2D6A4F;--primary-light:#3D8B6A;
@@ -20,7 +20,7 @@ body{
   --card-border:1px solid rgba(31,42,36,0.15)
 }
 h1,h2,h3{font-family:"Plus Jakarta Sans","Inter",sans-serif;font-weight:600}
-.app{max-width:1200px;margin:0 auto;padding:0 16px 72px}
+.app{max-width:1200px;margin:0 auto;padding:0 16px 20px}
 
 /* ─── Connection Bar ─── */
 .conn-bar{display:flex;align-items:center;gap:8px;padding:8px 14px;margin-bottom:12px;background:var(--surface);border:var(--card-border);font-size:0.75rem}
@@ -65,9 +65,6 @@ h1,h2,h3{font-family:"Plus Jakarta Sans","Inter",sans-serif;font-weight:600}
 .wf-conn.done{background:var(--primary)}
 .wf-conn.active::after{content:'';position:absolute;top:0;left:-8px;width:8px;height:100%;background:var(--secondary);animation:march 0.6s linear infinite;opacity:0.7}
 @keyframes march{0%{left:-8px}100%{left:22px}}
-.wf-pulse{position:absolute;top:50%;left:50%;width:6px;height:6px;border-radius:50%;background:var(--secondary);transform:translate(-50%,-50%);animation:wf-glow 1.2s ease-in-out infinite;opacity:0}
-.wf-step.active .wf-pulse{opacity:1}
-@keyframes wf-glow{0%,100%{box-shadow:0 0 0 0 rgba(224,122,62,0.4)}50%{box-shadow:0 0 0 6px rgba(224,122,62,0)}}
 .wf-loop{display:inline-block;font-size:0.85rem}
 .wf-loop.spin{animation:spin-once 0.5s ease-out}
 @keyframes spin-once{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
@@ -183,7 +180,6 @@ table.trade-table .num.neg{color:var(--warning)}
   <nav class="top-nav"><div class="brand">Shiva Sniper</div><div class="tabs">
     <button class="tab-btn active" data-page="overview">Overview</button>
     <button class="tab-btn" data-page="trades">Trade Log</button>
-    <button class="tab-btn" data-page="workflow">Live Workflow</button>
   </div></nav>
 
   <!-- ===== OVERVIEW ===== -->
@@ -243,14 +239,10 @@ table.trade-table .num.neg{color:var(--warning)}
     <div id="tradesEmpty" style="text-align:center;padding:30px;color:var(--ink-light)">📋 No trade history</div>
   </section>
 
-  <!-- ===== WORKFLOW FULL ===== -->
-  <section class="page" id="page-workflow"><div class="wf-panel"><div class="wf-header"><h3>Live Workflow — Full View</h3><span class="wf-stage" id="wfStageLabelFull">—</span></div><div class="wf-strip" id="wfStripFull"></div></div></section>
-
   <!-- BOTTOM NAV -->
   <nav class="bottom-nav"><div class="tabs">
     <button class="tab-btn active" data-page="overview"><span class="tab-icon">📊</span>Overview</button>
     <button class="tab-btn" data-page="trades"><span class="tab-icon">📋</span>Trades</button>
-    <button class="tab-btn" data-page="workflow"><span class="tab-icon">⚙️</span>Workflow</button>
   </div></nav>
 </div>
 
@@ -302,7 +294,7 @@ function setConn(s){const dot=document.getElementById('connDot'),lb=document.get
   dot.className='conn-dot '+s;
   if(s==='live'){lb.textContent='Live';meta.textContent=dataReceived?ft(Date.now()):''}
   else{lb.textContent='Offline';meta.textContent=''}}
-function render(){renderWF('wfStrip','wfStageLabel');renderWF('wfStripFull','wfStageLabelFull');renderOverview();renderTrades()}
+function render(){renderWF('wfStrip','wfStageLabel');renderOverview();renderTrades()}
 
 // ─── Workflow Render ───
 function renderWF(containerId,labelId){
@@ -314,7 +306,6 @@ function renderWF(containerId,labelId){
   el.innerHTML=WF_STEPS.map((s,i)=>{
     let c='wf-step';if(idx>=0&&i<idx)c+=' done';else if(i===idx)c+=' active';
     const n=i<WF_STEPS.length-1?'<div class="wf-conn'+(idx>=0&&i<idx?' done':i===idx?' active':'')+'"></div>':'';
-    const p=i===idx?'<div class="wf-pulse"></div>':'';
     return '<div class="'+c+'"><div class="wf-node">'+s.l+p+'</div></div>'+n;
   }).join('');
   // trigger loop spin
