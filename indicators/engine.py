@@ -148,6 +148,7 @@ class IndicatorSnapshot:
     volume:       float
     prev_high:    float
     prev_low:     float
+    prev_rsi:     float  # RSI of previous bar (for crossover detection)
     timestamp:    int
 
 
@@ -335,7 +336,9 @@ def compute(df: pd.DataFrame) -> IndicatorSnapshot:
         f"bar_low={float(last['low']):.2f} bar_close={float(last['close']):.2f}"
     )
 
-    rsi = float(_rsi_series(close, RSI_LEN).iloc[-1])
+    rsi_s = _rsi_series(close, RSI_LEN)
+    rsi = float(rsi_s.iloc[-1])
+    prev_rsi_val = float(rsi_s.iloc[-2]) if len(rsi_s) >= 2 else 50.0
 
     plus_di_s, minus_di_s, adx_raw_s = _dmi_series(high, low, close, DI_LEN, ADX_SMOOTH)
     dip_val      = float(plus_di_s.iloc[-1])
@@ -398,6 +401,7 @@ def compute(df: pd.DataFrame) -> IndicatorSnapshot:
         volume       = float(last["volume"]),
         prev_high    = float(prev["high"]),
         prev_low     = float(prev["low"]),
+        prev_rsi     = prev_rsi_val,
         timestamp    = int(last.get("timestamp", 0)),
     )
 
@@ -448,16 +452,12 @@ def compute_full_series(df: pd.DataFrame) -> pd.DataFrame:
 
 def evaluate(snap: IndicatorSnapshot, has_position: bool = False) -> Signal:
     """
-    RSI Bounce Strategy (backtest v2).
+    RSI Bounce Strategy — RSI cross in trend direction.
 
-    In BEAR market (close < EMA200):
-        SHORT when RSI crosses above SHORT_ENTER and is below SHORT_EXIT
+    BEAR (close < EMA100): SHORT when RSI crosses ABOVE SHORT_ENTER, capped at SHORT_EXIT
+    BULL (close > EMA100): LONG when RSI crosses BELOW LONG_ENTER, floored at LONG_EXIT
 
-    In BULL market (close > EMA200):
-        LONG when RSI crosses below LONG_ENTER and is above LONG_EXIT
-
-    SL = ATR * SL_ATR_MULT
-    TP = SL * TP_RR_MULT
+    SL = ATR * SL_ATR_MULT  |  TP = SL * TP_RR_MULT
     """
     if has_position:
         return Signal(SignalType.NONE, False, False, "NONE")
@@ -465,19 +465,15 @@ def evaluate(snap: IndicatorSnapshot, has_position: bool = False) -> Signal:
     from config import (
         RSI_BOUNCE_LONG_ENTER, RSI_BOUNCE_LONG_EXIT,
         RSI_BOUNCE_SHORT_ENTER, RSI_BOUNCE_SHORT_EXIT,
-        EMA_TREND_LEN,
     )
 
-    is_bull = snap.close > snap.ema_trend
-    is_bear = snap.close < snap.ema_trend
     rsi = snap.rsi
+    prsi = snap.prev_rsi
 
-    # Short in Bear: RSI bounces up into 45-70 range
-    if is_bear and rsi > RSI_BOUNCE_SHORT_ENTER and rsi < RSI_BOUNCE_SHORT_EXIT:
+    if snap.close < snap.ema_trend and rsi > RSI_BOUNCE_SHORT_ENTER and rsi < RSI_BOUNCE_SHORT_EXIT and prsi <= RSI_BOUNCE_SHORT_ENTER:
         return Signal(SignalType.TREND_SHORT, is_long=False, is_trend=True, regime="BEAR")
 
-    # Long in Bull: RSI dips down into 30-55 range
-    if is_bull and rsi < RSI_BOUNCE_LONG_ENTER and rsi > RSI_BOUNCE_LONG_EXIT:
+    if snap.close > snap.ema_trend and rsi < RSI_BOUNCE_LONG_ENTER and rsi > RSI_BOUNCE_LONG_EXIT and prsi >= RSI_BOUNCE_LONG_ENTER:
         return Signal(SignalType.TREND_LONG, is_long=True, is_trend=True, regime="BULL")
 
     return Signal(SignalType.NONE, False, False, "NONE")

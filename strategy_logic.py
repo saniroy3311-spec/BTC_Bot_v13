@@ -73,6 +73,7 @@ class IndicatorSnapshot:
     volume:       float
     prev_high:    float
     prev_low:     float
+    prev_rsi:     float
     timestamp:    int
     prev_close:   float
     close_2:      float
@@ -279,6 +280,7 @@ def compute(df: pd.DataFrame) -> IndicatorSnapshot:
         close_2      = float(prev2["close"]),
         close_3      = float(prev3["close"]),
         prev_rsi     = float(prev["rsi"]),
+        prev_rsi     = float(prev["rsi"]) if "rsi" in prev else 50.0,
     )
 
 
@@ -326,22 +328,19 @@ def evaluate_entry(snap: IndicatorSnapshot, has_position: bool) -> Signal:
         _last_signal_hash = ""
 
     """
-    RSI Bounce Strategy (backtest v2).
-
-    In BEAR (close < EMA200): SHORT when RSI in 45-70 range
-    In BULL (close > EMA200):  LONG when RSI in 30-55 range
+    RSI Bounce Strategy — RSI cross in trend direction.
     """
     if has_position:
         return Signal(SignalType.NONE, False, False, "none")
 
-    is_bull = snap.close > snap.ema_trend
-    is_bear = snap.close < snap.ema_trend
+    rsi = snap.rsi
+    prsi = snap.prev_rsi
 
-    if is_bear and snap.rsi > RSI_BOUNCE_SHORT_ENTER and snap.rsi < RSI_BOUNCE_SHORT_EXIT:
-        return Signal(SignalType.TREND_SHORT, False, True, "bear_short")
+    if snap.close < snap.ema_trend and rsi > RSI_BOUNCE_SHORT_ENTER and rsi < RSI_BOUNCE_SHORT_EXIT and prsi <= RSI_BOUNCE_SHORT_ENTER:
+        return Signal(SignalType.TREND_SHORT, False, True, "bear")
 
-    if is_bull and snap.rsi < RSI_BOUNCE_LONG_ENTER and snap.rsi > RSI_BOUNCE_LONG_EXIT:
-        return Signal(SignalType.TREND_LONG, True, True, "bull_long")
+    if snap.close > snap.ema_trend and rsi < RSI_BOUNCE_LONG_ENTER and rsi > RSI_BOUNCE_LONG_EXIT and prsi >= RSI_BOUNCE_LONG_ENTER:
+        return Signal(SignalType.TREND_LONG, True, True, "bull")
 
 
     return Signal(SignalType.NONE, False, False, "none")

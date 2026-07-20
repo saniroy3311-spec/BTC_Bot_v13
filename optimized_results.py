@@ -17,8 +17,8 @@ QTY = 0.1  # 0.1 BTC position size (P/L = price_diff * BTC_amount)
 
 trades = []
 for i in range(220, n - 1):
-    bear = data["close"][i] < ind["ema200"][i]
-    bull = data["close"][i] > ind["ema200"][i]
+    bear = data["close"][i] < ind["ema_trend"][i]
+    bull = data["close"][i] > ind["ema_trend"][i]
     sig = None
     if bear and ind["rsi"][i] > SE and ind["rsi"][i] < SX and ind["rsi"][i-1] <= SE:
         sig = "short"

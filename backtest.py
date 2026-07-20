@@ -93,8 +93,8 @@ def _row_to_snap(row, prev_row, prev2_row=None, prev3_row=None) -> IndicatorSnap
         close_2      = float(p2["close"]),
         close_3      = float(p3["close"]),
         prev_rsi     = float(prev_row["rsi"]),
+        prev_rsi     = float(prev_row["rsi"]) if "rsi" in prev_row else 50.0,
     )
-
 
 def _intrabar_exit_long(open_p, high, low, close,
                         sl_price, tp_price, max_sl_active, max_sl_price):

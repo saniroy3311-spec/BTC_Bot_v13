@@ -39,11 +39,19 @@ def rma(arr, period):
     return out
 
 
-def compute_indicators(close, high, low, volume):
+def compute_indicators(close, high, low, volume, ema_trend_len=None):
+    import sys
+    if ema_trend_len is None:
+        try:
+            sys.path.insert(0, r"D:\BTC Bot v13")
+            from config import EMA_TREND_LEN
+            ema_trend_len = EMA_TREND_LEN
+        except (ImportError, Exception):
+            ema_trend_len = 100  # default
     n = len(close)
     ema20 = ema(close, 20)
     ema50 = ema(close, 50)
-    ema200 = ema(close, 200)
+    ema_trend = ema(close, ema_trend_len)
 
     # ATR
     tr = np.full(n, np.nan)
@@ -68,7 +76,7 @@ def compute_indicators(close, high, low, volume):
             rsi[i] = 100.0 - 100.0 / (1.0 + avg_gain[i] / avg_loss[i])
 
     return {
-        "ema20": ema20, "ema50": ema50, "ema200": ema200,
+        "ema20": ema20, "ema50": ema50, "ema_trend": ema_trend,
         "atr14": atr14, "rsi": rsi
     }
 
@@ -170,13 +178,13 @@ if __name__ == "__main__":
 
     # Strategy 1: Short in Bear (RSI bounce)
     def short_bear(i, d, ind):
-        if d["close"][i] < ind["ema200"][i] and ind["rsi"][i] > 45 and ind["rsi"][i] < 70 and ind["rsi"][i-1] <= 45:
+        if d["close"][i] < ind["ema_trend"][i] and ind["rsi"][i] > 45 and ind["rsi"][i] < 70 and ind["rsi"][i-1] <= 45:
             return "short"
         return None
 
     # Strategy 2: Long in Bull (RSI dip)
     def long_bull(i, d, ind):
-        if d["close"][i] > ind["ema200"][i] and ind["rsi"][i] < 55 and ind["rsi"][i] > 30 and ind["rsi"][i-1] >= 55:
+        if d["close"][i] > ind["ema_trend"][i] and ind["rsi"][i] < 55 and ind["rsi"][i] > 30 and ind["rsi"][i-1] >= 55:
             return "long"
         return None
 
