@@ -247,6 +247,10 @@ class BTCBotV13:
         logger.info("Feed ready — waiting for first bar close...")
 
     async def _on_bar_close(self, df) -> None:
+        try:
+            _push.push_workflow_step(0)  # Fetch Candle
+        except Exception:
+            pass
         if self._in_position and not self._entry_lock.locked():
             try:
                 actual = await self._order_mgr.fetch_open_position()
@@ -307,6 +311,11 @@ class BTCBotV13:
             logger.warning(f"[BAR] Not enough bars: {e}")
             return
 
+        try:
+            _push.push_workflow_step(1)  # Eval Signal
+        except Exception:
+            pass
+
         logger.info(
             f"[BAR] close={snap.close:.2f}  atr={snap.atr:.2f}  "
             f"adx={snap.adx:.1f}  rsi={snap.rsi:.1f}  "
@@ -328,6 +337,10 @@ class BTCBotV13:
         # ── 2. Trail update for open position ─────────────────────────────────
         if self._in_position:
             if self._trail_mon._running:
+                try:
+                    _push.push_workflow_step(4)  # Monitor SL/TP
+                except Exception:
+                    pass
                 # FIX-9: is_entry_bar=True on the bar where entry was taken.
                 # Pine never evaluates SL/TP on the signal bar itself.
                 _is_entry_bar = (
@@ -469,6 +482,11 @@ class BTCBotV13:
         if self._entry_lock.locked():
             return
 
+        try:
+            _push.push_workflow_step(2)  # Entry Check
+        except Exception:
+            pass
+
         async with self._entry_lock:
             if self._in_position:
                 return
@@ -600,6 +618,7 @@ class BTCBotV13:
                     current_price = fill,
                     unrealized_pnl = 0.0,
                 )
+                _push.push_workflow_step(3)  # Position Open
             except Exception as _pe:
                 logger.warning(f"[DASH-PUSH] open_trade push failed: {_pe}")
 
@@ -663,6 +682,11 @@ class BTCBotV13:
         if not self._in_position:
             return
 
+        try:
+            _push.push_workflow_step(5)  # Exit
+        except Exception:
+            pass
+
         if not position_already_closed:
             logger.warning(
                 f"[EXIT] ⚠️  _on_trail_exit called with position_already_closed=False "
@@ -711,6 +735,7 @@ class BTCBotV13:
                     contract_size = POSITION_BTC_SIZE,
                     exit_reason   = reason,
                 )
+                _push.push_workflow_step(6)  # Log Trade
         except Exception as _pe:
             logger.warning(f"[DASH-PUSH] push_trade failed: {_pe}")
 
