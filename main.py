@@ -1,5 +1,5 @@
 """
-main.py — BTC Bot v13 Bot v10  (Live Runner)
+main.py — BTC Bot v13  (Live Runner)
 ══════════════════════════════════════════════════════════════════════════════
 
 Entry point launched by systemd / PM2 / Docker CMD.
@@ -68,6 +68,7 @@ from infra.whatsapp            import WhatsApp
 from infra.journal             import Journal
 from risk.lot_sizing           import btc_to_lots
 import server as _dashboard
+import dashboard_push as _push
 import threading as _threading
 import infra.heartbeat as _heartbeat
 
@@ -135,6 +136,7 @@ class BTCBotV13:
         self._trail_state : Optional[TrailState]  = None
         self._signal_type : str                   = "None"
         self._entry_bar_boundary_ms : int         = 0   # FIX-9: next bar open after entry
+        self._entry_time_ms : "Optional[int]"       = None  # for dashboard push accuracy
 
         # Guards
         self._entry_lock  = asyncio.Lock()
@@ -144,7 +146,7 @@ class BTCBotV13:
 
     async def initialize(self) -> None:
         logger.info("═" * 70)
-        logger.info("  BTC Bot v13 Bot v10 — Starting")
+        logger.info("  BTC Bot v13 — Starting")
         logger.info(f"  Symbol={SYMBOL}  TF={CANDLE_TIMEFRAME}")
         logger.info(f"  Position size: {POSITION_BTC_SIZE} BTC → {self._qty_lots} lots")
         logger.info(f"  FILTER_VOL_ENABLED={FILTER_VOL_ENABLED}  (false = full Pine parity)")
@@ -199,7 +201,7 @@ class BTCBotV13:
             )
 
         await self._telegram.send(
-            f"🟢 <b>BTC Bot v13 Bot v10 Started</b>\n"
+            f"🟢 <b>BTC Bot v13 Started</b>\n"
             f"Symbol: <code>{SYMBOL}</code>  TF: <code>{CANDLE_TIMEFRAME}</code>\n"
             f"Qty: <code>{self._qty_lots} lots</code> "
             f"({POSITION_BTC_SIZE} BTC)\n"
@@ -208,6 +210,10 @@ class BTCBotV13:
 
     async def shutdown(self) -> None:
         logger.info("Shutting down...")
+        try:
+            _push.push_status("stopped", qty=self._qty_lots, contract_size=POSITION_BTC_SIZE, timeframe=CANDLE_TIMEFRAME)
+        except Exception:
+            pass
         try:
             _dashboard.stop()
         except Exception:
@@ -529,6 +535,7 @@ class BTCBotV13:
             self._in_position  = True
             self._risk         = risk
             self._signal_type  = sig.signal_type.value
+            self._entry_time_ms = int(time.time() * 1000)
             
             # current_sl = risk.sl  (= signal_close ± ATR×atrMult, Pine-exact)
             # DO NOT use entry+trail_pts here — that is the activation distance,
@@ -583,6 +590,18 @@ class BTCBotV13:
                 )
             except Exception:
                 pass
+
+            try:
+                _push.push_open_trade(
+                    direction    = "long" if sig.is_long else "short",
+                    entry_price  = fill,
+                    sl           = risk.sl,
+                    tp           = risk.tp,
+                    current_price = fill,
+                    unrealized_pnl = 0.0,
+                )
+            except Exception as _pe:
+                logger.warning(f"[DASH-PUSH] open_trade push failed: {_pe}")
 
             await self._telegram.notify_entry(
                 signal_type = sig.signal_type.value,
@@ -679,6 +698,23 @@ class BTCBotV13:
             logger.warning(f"[JOURNAL] log_trade failed: {e}")
 
         try:
+            if risk:
+                _entry_ms = getattr(self, "_entry_time_ms", None) or int(time.time() * 1000)
+                _push.push_trade(
+                    trade_id      = _push.push_trade_id(_entry_ms),
+                    direction     = "long" if risk.is_long else "short",
+                    entry_price   = risk.entry_price,
+                    exit_price    = exit_price,
+                    entry_time    = _entry_ms,
+                    exit_time     = int(time.time() * 1000),
+                    qty           = self._qty_lots,
+                    contract_size = POSITION_BTC_SIZE,
+                    exit_reason   = reason,
+                )
+        except Exception as _pe:
+            logger.warning(f"[DASH-PUSH] push_trade failed: {_pe}")
+
+        try:
             await self._telegram.notify_exit(
                 reason      = reason,
                 entry_price = risk.entry_price if risk else 0.0,
@@ -720,6 +756,15 @@ class BTCBotV13:
 
         _dashboard.start()
         _start_client_dashboard()
+        try:
+            _push.push_status(
+                "running",
+                qty           = self._qty_lots,
+                contract_size = POSITION_BTC_SIZE,
+                timeframe     = CANDLE_TIMEFRAME,
+            )
+        except Exception as _pe:
+            logger.warning(f"[DASH-PUSH] startup status push failed: {_pe}")
         try:
             await feed.start()
         except asyncio.CancelledError:
