@@ -124,7 +124,7 @@ WHATSAPP_TEMPLATE_LANG   = os.environ.get("WHATSAPP_TEMPLATE_LANG",    "en")
 # ──────────────────────────────────────
 # INDICATOR LENGTHS  (Pine-exact)
 # ──────────────────────────────────────
-EMA_TREND_LEN = int(os.environ.get("EMA_TREND_LEN", "200"))
+EMA_TREND_LEN = int(os.environ.get("EMA_TREND_LEN", "100"))
 EMA_FAST_LEN  = int(os.environ.get("EMA_FAST_LEN",  "50"))
 ATR_LEN       = 14
 DI_LEN        = 14
