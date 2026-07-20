@@ -1,0 +1,10 @@
+{
+  "name": "shiva-sniper-dashboard",
+  "version": "1.0.0",
+  "description": "Live trading dashboard for Shiva Sniper bot",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {}
+}

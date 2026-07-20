@@ -1,0 +1,76 @@
+// ============================================================
+// BTC Bot v13 — Indicator Verification Script
+// ============================================================
+// Purpose: Export exact indicator values from TradingView so you
+// can compare bar-by-bar against the Python bot's indicator output.
+//
+// HOW TO USE:
+//   1. Add this script to the SAME BTC/USDT 30m chart
+//   2. Open "Data Window" (right panel) to inspect values
+//   3. Right-click chart → Download historical data
+//      This exports all plot values per bar
+//   4. Compare against Python's compute_full_series() output
+//
+// ALL PARAMETERS match D:\BTC Bot v13\config.py exactly
+// ============================================================
+//@version=5
+indicator("BTC Bot v13 — Indicator Verifier", overlay=false, precision=4)
+
+// ── Inputs (must match config.py exactly) ───────────────────
+emaTrendLen = input.int(200, "EMA Trend Length")
+emaFastLen  = input.int(50,  "EMA Fast Length")
+atrLen      = input.int(14,  "ATR Length")
+diLen       = input.int(14,  "DI Length")
+adxSmooth   = input.int(14,  "ADX Smoothing")
+adxEMA      = input.int(5,   "ADX EMA")
+rsiLen      = input.int(14,  "RSI Length")
+
+// ── Indicators (exact Pine built-ins) ────────────────────────
+emaTrend         = ta.ema(close, emaTrendLen)
+emaFast          = ta.ema(close, emaFastLen)
+atr              = ta.atr(atrLen)
+rsi              = ta.rsi(close, rsiLen)
+[dip, dim, adxRaw] = ta.dmi(diLen, adxSmooth)
+adx              = ta.ema(adxRaw, adxEMA)
+volSMA           = ta.sma(volume, 20)
+atrSMA           = ta.sma(atr, 50)
+
+// ── Regime ───────────────────────────────────────────────────
+trendRegime = adx > 22
+rangeRegime = adx < 5
+
+// ── Filters ──────────────────────────────────────────────────
+filtATR  = atr < atrSMA * 1.4
+filtVol  = volume > volSMA
+filtersOK = filtATR and filtVol
+
+// ── Entry Signals ────────────────────────────────────────────
+trendLong  = trendRegime and emaFast > emaTrend and dip > dim
+             and close > high[1] and filtersOK
+trendShort = trendRegime and emaFast < emaTrend and dim > dip
+             and close < low[1] and filtersOK
+
+// ── Plots (visible in Data Window + CSV export) ──────────────
+plot(emaTrend,  "EMA_TREND",  color=color.orange,  linewidth=1)
+plot(emaFast,   "EMA_FAST",   color=color.blue,    linewidth=1)
+plot(atr,       "ATR",        color=color.yellow,   linewidth=1)
+plot(rsi,       "RSI",        color=color.purple,   linewidth=1)
+plot(dip,       "DI_PLUS",    color=color.green,    linewidth=1)
+plot(dim,       "DI_MINUS",   color=color.red,      linewidth=1)
+plot(adxRaw,    "ADX_RAW",    color=color.gray,     linewidth=1)
+plot(adx,       "ADX",        color=color.white,    linewidth=1)
+plot(volSMA,    "VOL_SMA",    color=color.teal,     linewidth=1)
+plot(atrSMA,    "ATR_SMA",    color=color.lime,     linewidth=1)
+
+// ── Signal Plots ─────────────────────────────────────────────
+plot(trendLong  ? 1 : 0, "SIG_TREND_LONG",  color=color.green)
+plot(trendShort ? 1 : 0, "SIG_TREND_SHORT", color=color.red)
+
+// ── Regime Plots ─────────────────────────────────────────────
+plot(trendRegime ? 1 : 0, "REGIME_TREND", color=color.blue)
+plot(rangeRegime ? 1 : 0, "REGIME_RANGE", color=color.orange)
+
+// ── Filter Plots ─────────────────────────────────────────────
+plot(filtATR     ? 1 : 0, "FILT_ATR_OK", color=color.lime)
+plot(filtVol     ? 1 : 0, "FILT_VOL_OK", color=color.aqua)
+plot(filtersOK   ? 1 : 0, "FILTERS_ALL_OK", color=color.white)

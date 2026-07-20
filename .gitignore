@@ -1,0 +1,28 @@
+# Environment
+.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Data files (large CSVs excluded from git)
+*.csv
+
+# Backtest cache
+bt_cache_*.csv
+
+# Logs
+*.log
+journal.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Node
+node_modules/

@@ -1,0 +1,37 @@
+{
+  "baseline": {
+    "total": 2067,
+    "wins": 1335,
+    "win_rate": 64.6,
+    "net_pl": 2190.71,
+    "profit_factor": 1.38,
+    "max_dd_pct": 2.96,
+    "score": 566.4
+  },
+  "optimized": {
+    "total": 1866,
+    "wins": 1409,
+    "win_rate": 75.5,
+    "net_pl": 7684.69,
+    "profit_factor": 2.21,
+    "max_dd_pct": 1.09,
+    "score": 8071.69
+  },
+  "config": {
+    "SL_ATR_MULT": 1.0,
+    "TP_RR_MULT": 1.0,
+    "RSI_BOUNCE_SHORT_ENTER": 38,
+    "RSI_BOUNCE_SHORT_EXIT": 65,
+    "RSI_BOUNCE_LONG_ENTER": 45,
+    "RSI_BOUNCE_LONG_EXIT": 25,
+    "FILTER_ATR_MULT": 2.0,
+    "FILTER_BODY_MULT": 0.5,
+    "FILTER_VOL_ENABLED": true,
+    "FILTER_VOL_MULT": 1.0,
+    "MAX_SL_POINTS": 800.0,
+    "MAX_BARS": 8,
+    "COMMISSION_PCT": 0.0005,
+    "POSITION_BTC": 0.1
+  },
+  "timestamp": "2026-07-20T15:57:41.669587+00:00"
+}
