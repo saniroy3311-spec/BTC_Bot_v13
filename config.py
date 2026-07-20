@@ -179,13 +179,13 @@ VOL_MULT  = float(os.environ.get("VOL_MULT",  "1.3"))
 #           Enter LONG in bull market when RSI dips 30-55
 # SL = ATR * SL_ATR_MULT
 # TP = SL * TP_RR_MULT
-RSI_BOUNCE_LONG_ENTER  = float(os.environ.get("RSI_BOUNCE_LONG_ENTER",  "55"))
-RSI_BOUNCE_LONG_EXIT   = float(os.environ.get("RSI_BOUNCE_LONG_EXIT",   "30"))
-RSI_BOUNCE_SHORT_ENTER = float(os.environ.get("RSI_BOUNCE_SHORT_ENTER", "45"))
-RSI_BOUNCE_SHORT_EXIT  = float(os.environ.get("RSI_BOUNCE_SHORT_EXIT",  "70"))
-SL_ATR_MULT  = float(os.environ.get("SL_ATR_MULT",  "0.8"))
+RSI_BOUNCE_LONG_ENTER  = float(os.environ.get("RSI_BOUNCE_LONG_ENTER",  "50"))
+RSI_BOUNCE_LONG_EXIT   = float(os.environ.get("RSI_BOUNCE_LONG_EXIT",   "25"))
+RSI_BOUNCE_SHORT_ENTER = float(os.environ.get("RSI_BOUNCE_SHORT_ENTER", "40"))
+RSI_BOUNCE_SHORT_EXIT  = float(os.environ.get("RSI_BOUNCE_SHORT_EXIT",  "65"))
+SL_ATR_MULT  = float(os.environ.get("SL_ATR_MULT",  "0.5"))
 TP_RR_MULT   = float(os.environ.get("TP_RR_MULT",   "1.5"))
-MAX_SL_POINTS = float(os.environ.get("MAX_SL_POINTS", "800.0"))
+MAX_SL_POINTS = float(os.environ.get("MAX_SL_POINTS", "500.0"))
 
 # Legacy ADX/DMI params (kept for reference, no longer used)
 TREND_RR       = TP_RR_MULT
