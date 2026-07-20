@@ -448,68 +448,37 @@ def compute_full_series(df: pd.DataFrame) -> pd.DataFrame:
 
 def evaluate(snap: IndicatorSnapshot, has_position: bool = False) -> Signal:
     """
-    Evaluate Pine Script entry conditions for the confirmed bar.
+    RSI Bounce Strategy (backtest v2).
 
-    FIX-3: renamed from evaluate_entry() to evaluate() and added
-    has_position parameter to match main.py's call:
-        sig = evaluate(snap, has_position=False)
+    In BEAR market (close < EMA200):
+        SHORT when RSI crosses above SHORT_ENTER and is below SHORT_EXIT
 
-    Maps 1:1 to Pine Script:
-        trendLong  = trendRegime and emaFast > emaTrend and dip > dim
-                     and close > high[1] and filters
-        trendShort = trendRegime and emaFast < emaTrend and dim > dip
-                     and close < low[1] and filters
-        rangeLong  = rangeRegime and rsi < rsiOS and filters
-        rangeShort = rangeRegime and rsi > rsiOB and filters
+    In BULL market (close > EMA200):
+        LONG when RSI crosses below LONG_ENTER and is above LONG_EXIT
 
-    FIX-BREAKOUT-BUFFER: BREAKOUT_BUFFER_PTS added to trend entry conditions.
-        Bot was entering on Delta micro-breakouts that Pine (TradingView data)
-        never saw — Delta and TradingView have different OHLCV for the same bar.
-        Buffer ensures close must exceed prev_high/low by enough pts to confirm
-        it's a real breakout visible on both feeds.
-        Controlled via .env: BREAKOUT_BUFFER_PTS=30 (default 20)
-        Set to 0 to match exact Pine condition with no buffer.
-
-    Returns Signal(NONE) if in position or no conditions met.
-    NOTE: Pine has NO bar-close signal-reversal exit. Exits are
-    handled entirely by trail_loop.py at tick resolution.
+    SL = ATR * SL_ATR_MULT
+    TP = SL * TP_RR_MULT
     """
     if has_position:
         return Signal(SignalType.NONE, False, False, "NONE")
 
-    f  = snap.filters_ok
-    tr = snap.trend_regime
-    rr = snap.range_regime
-
-    # Pine: close > high[1]  →  snap.close > snap.prev_high
-    # Pine: close < low[1]   →  snap.close < snap.prev_low
-    # FIX-BREAKOUT-BUFFER: add BREAKOUT_BUFFER_PTS to filter feed divergence.
-    trend_long = (
-        tr
-        and snap.ema_fast > snap.ema_trend
-        and snap.dip > snap.dim
-        and snap.close > snap.prev_high + BREAKOUT_BUFFER_PTS
-        and f
+    from config import (
+        RSI_BOUNCE_LONG_ENTER, RSI_BOUNCE_LONG_EXIT,
+        RSI_BOUNCE_SHORT_ENTER, RSI_BOUNCE_SHORT_EXIT,
+        EMA_TREND_LEN,
     )
-    trend_short = (
-        tr
-        and snap.ema_fast < snap.ema_trend
-        and snap.dim > snap.dip
-        and snap.close < snap.prev_low - BREAKOUT_BUFFER_PTS
-        and f
-    )
-    range_long  = rr and snap.rsi < RSI_OS and f
-    range_short = rr and snap.rsi > RSI_OB and f
 
-    # Priority matches Pine: trendLong → trendShort → rangeLong → rangeShort
-    if trend_long:
-        return Signal(SignalType.TREND_LONG,  is_long=True,  is_trend=True,  regime="TREND")
-    if trend_short:
-        return Signal(SignalType.TREND_SHORT, is_long=False, is_trend=True,  regime="TREND")
-    if range_long:
-        return Signal(SignalType.RANGE_LONG,  is_long=True,  is_trend=False, regime="RANGE")
-    if range_short:
-        return Signal(SignalType.RANGE_SHORT, is_long=False, is_trend=False, regime="RANGE")
+    is_bull = snap.close > snap.ema_trend
+    is_bear = snap.close < snap.ema_trend
+    rsi = snap.rsi
+
+    # Short in Bear: RSI bounces up into 45-70 range
+    if is_bear and rsi > RSI_BOUNCE_SHORT_ENTER and rsi < RSI_BOUNCE_SHORT_EXIT:
+        return Signal(SignalType.TREND_SHORT, is_long=False, is_trend=True, regime="BEAR")
+
+    # Long in Bull: RSI dips down into 30-55 range
+    if is_bull and rsi < RSI_BOUNCE_LONG_ENTER and rsi > RSI_BOUNCE_LONG_EXIT:
+        return Signal(SignalType.TREND_LONG, is_long=True, is_trend=True, regime="BULL")
 
     return Signal(SignalType.NONE, False, False, "NONE")
 

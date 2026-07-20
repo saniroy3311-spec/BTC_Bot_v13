@@ -11,14 +11,23 @@ import pandas as pd
 from config import (
     EMA_TREND_LEN, EMA_FAST_LEN, ATR_LEN,
     DI_LEN, ADX_SMOOTH, ADX_EMA, RSI_LEN,
+
     ADX_TREND_TH, ADX_RANGE_TH,
     FILTER_ATR_MULT, FILTER_BODY_MULT, FILTER_VOL_ENABLED, FILTER_VOL_MULT,
     RSI_OB, RSI_OS,
     RSI_LONG, RSI_SHORT, VOL_MULT,
+
+    RSI_BOUNCE_LONG_ENTER, RSI_BOUNCE_LONG_EXIT,
+    RSI_BOUNCE_SHORT_ENTER, RSI_BOUNCE_SHORT_EXIT,
+    SL_ATR_MULT, TP_RR_MULT, MAX_SL_POINTS,
+
     TREND_RR, RANGE_RR, TREND_ATR_MULT, RANGE_ATR_MULT,
-    MAX_SL_MULT, MAX_SL_POINTS, TRAIL_STAGES, BE_MULT, PINE_MINTICK,
+    MAX_SL_MULT, TRAIL_STAGES, BE_MULT, PINE_MINTICK,
     COMMISSION_PCT,
+
     BREAKOUT_BUFFER_PTS,
+
+
 )
 
 
@@ -277,6 +286,7 @@ def compute(df: pd.DataFrame) -> IndicatorSnapshot:
 _last_signal_hash = ""
 
 def evaluate_entry(snap: IndicatorSnapshot, has_position: bool) -> Signal:
+
     global _last_signal_hash
     if has_position:
         return Signal(SignalType.NONE, False, False, "none")
@@ -314,6 +324,26 @@ def evaluate_entry(snap: IndicatorSnapshot, has_position: bool) -> Signal:
 
     if not sig_hash:
         _last_signal_hash = ""
+
+    """
+    RSI Bounce Strategy (backtest v2).
+
+    In BEAR (close < EMA200): SHORT when RSI in 45-70 range
+    In BULL (close > EMA200):  LONG when RSI in 30-55 range
+    """
+    if has_position:
+        return Signal(SignalType.NONE, False, False, "none")
+
+    is_bull = snap.close > snap.ema_trend
+    is_bear = snap.close < snap.ema_trend
+
+    if is_bear and snap.rsi > RSI_BOUNCE_SHORT_ENTER and snap.rsi < RSI_BOUNCE_SHORT_EXIT:
+        return Signal(SignalType.TREND_SHORT, False, True, "bear_short")
+
+    if is_bull and snap.rsi < RSI_BOUNCE_LONG_ENTER and snap.rsi > RSI_BOUNCE_LONG_EXIT:
+        return Signal(SignalType.TREND_LONG, True, True, "bull_long")
+
+
     return Signal(SignalType.NONE, False, False, "none")
 
 

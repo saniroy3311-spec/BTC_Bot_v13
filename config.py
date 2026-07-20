@@ -173,20 +173,25 @@ RSI_SHORT = float(os.environ.get("RSI_SHORT", "42"))
 VOL_MULT  = float(os.environ.get("VOL_MULT",  "1.3"))
 
 # ─────────────────────────────────────
-# RISK / REWARD  (PINE-ALIGNED)
+# RSI BOUNCE STRATEGY (backtest v2)
 # ──────────────────────────────────────
-# Pine: trendRR=4.0, rangeRR=2.5
-# OPTIMIZED: TREND_RR=2.5 — realistic target that the market actually hits
-# Backtest showed 64% win rate with this value (vs 37% with RR=4.0)
-TREND_RR       = float(os.environ.get("TREND_RR",       "2.5"))
-RANGE_RR       = float(os.environ.get("RANGE_RR",       "2.5"))
-# Pine: trendATRmul=0.6, rangeATRmul=0.5, maxSLpoints=500
-# stopDist = min(atr * atrMult, maxSLPoints)
-# With ATR=514:
-# Trend SL = min(514 × 0.6, 500) = 308.4 pts
-# Range SL = min(514 × 0.5, 500) = 257.0 pts
-TREND_ATR_MULT = float(os.environ.get("TREND_ATR_MULT", "0.6"))
-RANGE_ATR_MULT = float(os.environ.get("RANGE_ATR_MULT", "0.5"))
+# Strategy: Enter SHORT in bear market when RSI bounces 45-70
+#           Enter LONG in bull market when RSI dips 30-55
+# SL = ATR * SL_ATR_MULT
+# TP = SL * TP_RR_MULT
+RSI_BOUNCE_LONG_ENTER  = float(os.environ.get("RSI_BOUNCE_LONG_ENTER",  "55"))
+RSI_BOUNCE_LONG_EXIT   = float(os.environ.get("RSI_BOUNCE_LONG_EXIT",   "30"))
+RSI_BOUNCE_SHORT_ENTER = float(os.environ.get("RSI_BOUNCE_SHORT_ENTER", "45"))
+RSI_BOUNCE_SHORT_EXIT  = float(os.environ.get("RSI_BOUNCE_SHORT_EXIT",  "70"))
+SL_ATR_MULT  = float(os.environ.get("SL_ATR_MULT",  "0.8"))
+TP_RR_MULT   = float(os.environ.get("TP_RR_MULT",   "1.5"))
+MAX_SL_POINTS = float(os.environ.get("MAX_SL_POINTS", "800.0"))
+
+# Legacy ADX/DMI params (kept for reference, no longer used)
+TREND_RR       = TP_RR_MULT
+RANGE_RR       = TP_RR_MULT
+TREND_ATR_MULT = SL_ATR_MULT
+RANGE_ATR_MULT = SL_ATR_MULT
 # Pine: maxSLmul=1.5, maxSLpoints=500
 MAX_SL_MULT    = float(os.environ.get("MAX_SL_MULT",    "1.5"))
 MAX_SL_POINTS  = float(os.environ.get("MAX_SL_POINTS",  "500.0"))
