@@ -66,6 +66,9 @@ class TelegramController:
     # ── Lifecycle ────────────────────────────────────────────────────────────
 
     async def run(self) -> None:
+        if not TELEGRAM_BOT_TOKEN:
+            logger.info("TelegramController disabled — no TELEGRAM_BOT_TOKEN set")
+            return
         logger.info("TelegramController started (long-poll)")
         while not self._stop:
             try:
