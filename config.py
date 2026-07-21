@@ -167,11 +167,20 @@ FILTER_BODY_TOLERANCE = float(os.environ.get("FILTER_BODY_TOLERANCE", "0.0"))
 FILTER_VOL_ENABLED = os.environ.get("FILTER_VOL_ENABLED", "true").lower() == "true"
 FILTER_VOL_MULT    = float(os.environ.get("FILTER_VOL_MULT", "1.0"))
 
-# ─── RSIMom+M3 strategy params (optimized) ────────────
-RSI_LONG  = float(os.environ.get("RSI_LONG",  "58"))
-RSI_SHORT = float(os.environ.get("RSI_SHORT", "42"))
-VOL_MULT  = float(os.environ.get("VOL_MULT",  "1.3"))
+# ─── TREND FOLLOW PARAMS (OPTIMIZED - from radical_optimize.py) ────────────
+# TREND_ONLY_TP_ON config that achieved $17,313 net in 1-year backtest (Jul 2025-Jul 2026)
+TREND_RR       = float(os.environ.get("TREND_RR", "2.5"))
+RANGE_RR       = float(os.environ.get("RANGE_RR", "2.5"))
+TREND_ATR_MULT = float(os.environ.get("TREND_ATR_MULT", "0.6"))
+RANGE_ATR_MULT = float(os.environ.get("RANGE_ATR_MULT", "0.5"))
+# Pine: maxSLmul=1.5, maxSLpoints=500
+MAX_SL_MULT    = float(os.environ.get("MAX_SL_MULT",    "1.5"))
+MAX_SL_POINTS  = float(os.environ.get("MAX_SL_POINTS",  "500.0"))
 
+# Breakeven trigger
+BE_MULT = float(os.environ.get("BE_MULT", "0.5"))
+
+# ─── RSI BOUNCE STRATEGY (backtest v2) - KEPT FOR REFERENCE ────────────────
 # ─────────────────────────────────────
 # RSI BOUNCE STRATEGY (backtest v2)
 # ──────────────────────────────────────
@@ -188,13 +197,6 @@ TP_RR_MULT   = float(os.environ.get("TP_RR_MULT",   "1.5"))
 MAX_SL_POINTS = float(os.environ.get("MAX_SL_POINTS", "500.0"))
 
 # Legacy ADX/DMI params (kept for reference, no longer used)
-TREND_RR       = TP_RR_MULT
-RANGE_RR       = TP_RR_MULT
-TREND_ATR_MULT = SL_ATR_MULT
-RANGE_ATR_MULT = SL_ATR_MULT
-# Pine: maxSLmul=1.5, maxSLpoints=500
-MAX_SL_MULT    = float(os.environ.get("MAX_SL_MULT",    "1.5"))
-MAX_SL_POINTS  = float(os.environ.get("MAX_SL_POINTS",  "500.0"))
 
 # ──────────────────────────────────────
 # EMERGENCY BRACKET WIDENING  (FIX-BRACKET-INTRABAR)
@@ -313,31 +315,10 @@ PINE_TICK_TRUNCATE = os.environ.get("PINE_TICK_TRUNCATE", "false").lower() == "t
 # Format: (trigger_ATR_mult, trail_points_mult, trail_offset_mult)
 # Values verified line-by-line against Pine inputs t1Trig/t1Pts/t1Off … t5*.
 #
-# ── REVERTED 2026-07-15 — BUG-FIX-TRAIL-OFFSET-2026-06-25 WAS ITSELF THE BUG ──
-# That "fix" reverse-engineered t1Off = 0.20 from trade #358's geometry and
-# overwrote Pine's real input of 0.4. The arithmetic it used was sound; its
-# assumption was not. It solved for off_mult while holding PINE_MINTICK at a
-# value (1.0) that was never verified against the Pine source.
-#
-# Read directly from the TradingView Inputs panel (BTC Bot v13 v6.5 — Delta
-# India), the true Pine values are:
-#     Stage-1  Trigger 0.8   Points 0.5    Offset 0.4
-#     Stage-2  Trigger 1.5   Points 0.4    Offset 0.3
-#     Stage-3  Trigger 2.5   Points 0.3    Offset 0.25
-#     Stage-4  Trigger 4     Points 0.2    Offset 0.15
-#     Stage-5  Trigger 6     Points 0.15   Offset 0.1
-#
-# With PINE_MINTICK correctly set to 0.5, trade #358 now reproduces exactly:
-#     262.53 × 0.4 × 0.5 = 52.51 → trail_SL = 61,092.01  (TV: 61,092.00)
-# i.e. stage 1 behaves identically to the old (0.20 × 1.0) pairing, while
-# stages 2-5 and all five activation distances are no longer 2× too wide.
-#
-# These values are transcribed from the Pine Inputs panel. They are NOT
-# tuning parameters. If a trade does not match, the divergence is elsewhere —
-# do not "solve" for these numbers again. That is what caused this bug.
-# ─────────────────────────────────────────────────────────────────────────────
+# DISABLED FOR TREND_ONLY_TP_ON: Set triggers to 999 so trail never activates.
+# Pure take-profit exit at 2.5× risk.
 TRAIL_STAGES = [
-    (999.0,  0.50, 0.40),   # Stage 1 — OPTIMIZED: trail disabled (TP mode active)
+    (999.0,  0.50, 0.40),   # Stage 1 — trail disabled (TP mode active)
     (999.0,  0.40, 0.30),   # Stage 2
     (999.0,  0.30, 0.25),   # Stage 3
     (999.0,  0.20, 0.15),   # Stage 4
