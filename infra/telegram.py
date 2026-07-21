@@ -20,12 +20,14 @@ import logging
 from datetime import datetime, timezone, timedelta
 
 import aiohttp
-from config          import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+from config          import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, PAPER_TRADING
 from risk.lot_sizing import compute_points, lots_to_btc
 
 logger        = logging.getLogger(__name__)
 IST           = timezone(timedelta(hours=5, minutes=30))
 _PLACEHOLDERS = {"YOUR_BOT_TOKEN", "YOUR_CHAT_ID", "", None}
+
+MODE_TAG = "🧪 PAPER" if PAPER_TRADING else "💵 LIVE"
 
 
 class Telegram:
@@ -77,19 +79,19 @@ class Telegram:
 
     async def notify_start(self) -> None:
         await self._send(
-            f"🚀 <b>BTC Bot v13 STARTED</b>\n"
+            f"🟩 <b>BTC Bot v13 STARTED</b>  [{MODE_TAG}]\n"
             f"<code>{Telegram._now_ist()}</code>"
         )
 
     async def notify_stop(self) -> None:
         await self._send(
-            f"🛑 <b>BTC Bot v13 STOPPED</b>\n"
+            f"🟥 <b>BTC Bot v13 STOPPED</b>  [{MODE_TAG}]\n"
             f"<code>{Telegram._now_ist()}</code>"
         )
 
     async def notify_crash(self, reason: str) -> None:
         await self._send(
-            f"💥 <b>BOT CRASHED</b>\n"
+            f"💥 <b>BOT CRASHED</b>  [{MODE_TAG}]\n"
             f"<code>{Telegram._now_ist()}</code>\n\n"
             f"<b>Reason:</b>\n<code>{str(reason)[:400]}</code>"
         )
@@ -97,7 +99,7 @@ class Telegram:
     # ── Error ─────────────────────────────────────────────────────────────────
 
     async def notify_error(self, context: str, error: str = "") -> None:
-        body = f"⚠️ <b>ERROR — {context}</b>\n<code>{Telegram._now_ist()}</code>"
+        body = f"🚨 <b>ERROR — {context}</b>\n<code>{Telegram._now_ist()}</code>"
         if error:
             body += f"\n\n<code>{str(error)[:300]}</code>"
         await self._send(body)
@@ -114,7 +116,7 @@ class Telegram:
         qty         : int = None,
     ) -> None:
         is_long = "Long" in signal_type
-        emoji   = "🟢" if is_long else "🔴"
+        emoji   = "🐂" if is_long else "🐻"
         side    = "LONG" if is_long else "SHORT"
         sl_dist = abs(entry_price - sl)
         tp_dist = abs(tp - entry_price)
@@ -126,12 +128,12 @@ class Telegram:
                 f"  ({lots_to_btc(qty):.4f} BTC)"
             )
         await self._send(
-            f"{emoji} <b>ENTRY — {side}</b>{qty_str}\n"
+            f"{emoji} <b>ENTRY — {side}</b>{qty_str}  [{MODE_TAG}]\n"
             f"<code>{Telegram._now_ist()}</code>\n\n"
-            f"Fill  : <b>${entry_price:,.2f}</b>\n"
-            f"SL    : <code>${sl:,.2f}</code>  (-{sl_dist:.2f})\n"
-            f"TP    : <code>${tp:,.2f}</code>  (+{tp_dist:.2f})\n"
-            f"ATR   : <code>{atr:.2f}</code>  |  R:R <code>{rr:.2f}</code>"
+            f"🎯 Fill  : <b>${entry_price:,.2f}</b>\n"
+            f"🛡 SL    : <code>${sl:,.2f}</code>  (-{sl_dist:.2f})\n"
+            f"🏁 TP    : <code>${tp:,.2f}</code>  (+{tp_dist:.2f})\n"
+            f"📐 ATR   : <code>{atr:.2f}</code>  |  R:R <code>{rr:.2f}</code>"
         )
 
     # ── Exit ──────────────────────────────────────────────────────────────────
@@ -148,19 +150,19 @@ class Telegram:
         side     = "LONG" if is_long else "SHORT"
         points   = compute_points(entry_price, exit_price, is_long)
         gross    = points * (qty or 1) * 0.001   # Delta inverse-perp formula
-        emoji    = "💰" if gross  >= 0 else "🔻"
+        emoji    = "🏆" if gross  >= 0 else "💔"
         pts_sign = "+" if points >= 0 else ""
         grs_sign = "+" if gross  >= 0 else ""
         qty_str  = f"  |  <code>{qty}</code> lot{'s' if qty != 1 else ''}" if qty else ""
 
         await self._send(
-            f"{emoji} <b>EXIT — {side}</b>{qty_str}\n"
+            f"{emoji} <b>EXIT — {side}</b>{qty_str}  [{MODE_TAG}]\n"
             f"<code>{Telegram._now_ist()}</code>\n\n"
-            f"Entry         : <code>${entry_price:,.2f}</code>\n"
-            f"Exit          : <b>${exit_price:,.2f}</b>\n"
-            f"Points        : <code>{pts_sign}{points:.2f}</code>\n"
-            f"<b>Gross P&amp;L : {grs_sign}${gross:.4f} USD</b>\n"
-            f"Reason        : <code>{reason}</code>"
+            f"📥 Entry         : <code>${entry_price:,.2f}</code>\n"
+            f"📤 Exit          : <b>${exit_price:,.2f}</b>\n"
+            f"📊 Points        : <code>{pts_sign}{points:.2f}</code>\n"
+            f"<b>💲 Gross P&amp;L : {grs_sign}${gross:.4f} USD</b>\n"
+            f"🔖 Reason        : <code>{reason}</code>"
         )
 
     # ── Daily Summary ─────────────────────────────────────────────────────────
@@ -197,7 +199,7 @@ class Telegram:
 
     async def notify_breakeven(self, entry_price: float) -> None:
         await self._send(
-            f"🔒 <b>SL → BREAKEVEN</b>\n"
+            f"🔐 <b>SL → BREAKEVEN</b>  [{MODE_TAG}]\n"
             f"<code>{Telegram._now_ist()}</code>\n\n"
             f"Stop moved to entry: <b>${entry_price:,.2f}</b>\n"
             f"Trade is now risk-free."
@@ -207,18 +209,18 @@ class Telegram:
         self, old_stage: int, new_stage: int, price: float, new_sl: float
     ) -> None:
         await self._send(
-            f"📈 <b>TRAIL STAGE {old_stage} → {new_stage}</b>\n"
+            f"🪜 <b>TRAIL STAGE {old_stage} → {new_stage}</b>  [{MODE_TAG}]\n"
             f"<code>{Telegram._now_ist()}</code>\n\n"
-            f"Price  : <b>${price:,.2f}</b>\n"
-            f"New SL : <code>${new_sl:,.2f}</code>"
+            f"💹 Price  : <b>${price:,.2f}</b>\n"
+            f"🛡 New SL : <code>${new_sl:,.2f}</code>"
         )
 
     async def notify_max_sl(self, price: float, entry_price: float) -> None:
         await self._send(
-            f"⛔ <b>MAX SL HIT</b>\n"
+            f"⛔ <b>MAX SL HIT</b>  [{MODE_TAG}]\n"
             f"<code>{Telegram._now_ist()}</code>\n\n"
-            f"Entry : <code>${entry_price:,.2f}</code>\n"
-            f"Price : <b>${price:,.2f}</b>"
+            f"📥 Entry : <code>${entry_price:,.2f}</code>\n"
+            f"💥 Price : <b>${price:,.2f}</b>"
         )
 
     # ── Cleanup ───────────────────────────────────────────────────────────────
