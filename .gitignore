@@ -2,3 +2,12 @@
 venv/
 __pycache__/
 *.pyc
+
+# Local tooling / assistant noise
+.claude/
+.remember/
+docs/superpowers/
+
+# Runtime state
+dashboard_state.json
+config.json

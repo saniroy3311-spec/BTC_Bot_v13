@@ -18,6 +18,7 @@ logger = logging.getLogger("dashboard_push")
 
 DASHBOARD_PUSH_URL = os.environ.get("DASHBOARD_PUSH_URL", "http://localhost:3005/api/state")
 DASHBOARD_PUSH_ENABLED = os.environ.get("DASHBOARD_PUSH_ENABLED", "true").lower() == "true"
+PAPER_TRADING = os.environ.get("PAPER_TRADING", "true").lower() == "true"
 
 
 def _post(data: dict) -> None:
@@ -38,6 +39,7 @@ def push_status(status: str, qty=None, contract_size=None, timeframe=None) -> No
             "qty": qty,
             "contractSize": contract_size,
             "timeframe": timeframe,
+            "paper": PAPER_TRADING,
             "lastUpdate": int(time.time() * 1000),
         }
     })

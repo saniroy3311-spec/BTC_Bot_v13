@@ -92,7 +92,9 @@ function formatStatusNotification(status, oldStatus) {
   );
 }
 
-// ─── In-memory state store ─────────────────────────────────
+// ─── State store (persisted to dashboard_state.json) ──────
+const STATE_FILE = path.join(__dirname, 'dashboard_state.json');
+
 let state = {
   botStatus: null,
   openTrade: null,
@@ -100,6 +102,30 @@ let state = {
   currentStep: -1,
   lastUpdate: null
 };
+
+// Load persisted state on boot so the trade log survives restarts
+try {
+  if (fs.existsSync(STATE_FILE)) {
+    const saved = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+    state = { ...state, ...saved };
+    (state.trades || []).forEach(t => notifiedTrades.add(t.id));
+    console.log(`[State] Restored ${state.trades.length} trades from ${STATE_FILE}`);
+  }
+} catch (e) {
+  console.error('[State] Failed to restore state:', e.message);
+}
+
+// Debounced save — at most one write per 2s burst of updates
+let saveTimer = null;
+function scheduleSave() {
+  if (saveTimer) return;
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    fs.writeFile(STATE_FILE, JSON.stringify(state), err => {
+      if (err) console.error('[State] Save failed:', err.message);
+    });
+  }, 2000);
+}
 
 // ─── Tiny JSON body parser ─────────────────────────────────
 function parseBody(req) {
@@ -211,6 +237,8 @@ async function handleRequest(req, res) {
 
       // Keep max 5000 trades in memory
       if (state.trades.length > 5000) state.trades = state.trades.slice(-5000);
+
+      scheduleSave();
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: true, tradesCount: state.trades.length }));

@@ -283,10 +283,14 @@ class OrderManager:
         sl: float,
         tp: float,
         atr: float = 1.0,
+        entry_price: float = 0.0,
     ) -> dict:
         """
         Place market entry order, then attach an WIDE EMERGENCY bracket SL.
         Python trail loop retains complete operational ownership of exits.
+
+        `entry_price` is accepted for signature parity with PaperOrderManager
+        (which fills at it) — the live exchange decides the real fill price.
         """
         side = "buy" if is_long else "sell"
         logger.info(
@@ -453,6 +457,16 @@ class OrderManager:
                 return {"info": "already_closed"}
             raise
 
+    async def close_position_market(self, reason: str = "Manual stop") -> dict:
+        """Close using the cached side — used by the Telegram/WhatsApp /stop
+        handlers, which don't track direction themselves."""
+        if self._is_long is None:
+            pos = await self.fetch_open_position()
+            if not pos:
+                return {"info": "already_closed"}
+            self._is_long = bool(pos.get("is_long"))
+        return await self.close_position(is_long=self._is_long, reason=reason)
+
     # ── Price feed / Recovery metrics ──────────────────────────────────────────
     async def fetch_ticker(self) -> Optional[dict]:
         """Fetch current asset quote mark data."""
@@ -513,15 +527,56 @@ class PaperOrderManager:
     Paper trading order manager — simulates all OrderManager methods.
     Logs trades to journal.db but NEVER places real orders on Delta.
     Used when PAPER_TRADING=true in .env.
+
+    Method signatures mirror OrderManager exactly, since main.py and
+    monitor/trail_loop.py share one call site for both managers.
     """
 
     def __init__(self) -> None:
         self._position: Optional[dict] = None
         self._is_long: Optional[bool] = None
         self._entry_price: float = 0.0
+        self._current_sl: Optional[float] = None
+        self._current_tp: Optional[float] = None
+        self._http: Optional[aiohttp.ClientSession] = None
 
     async def initialize(self) -> None:
         logger.info("[PAPER] PaperOrderManager ready (NO real trading)")
+
+    async def _http_session(self) -> aiohttp.ClientSession:
+        if self._http is None or self._http.closed:
+            self._http = aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=10)
+            )
+        return self._http
+
+    async def fetch_ticker(self) -> Optional[dict]:
+        """Public (unauthenticated) Delta ticker so the trail loop's REST
+        price poll works in paper mode too."""
+        try:
+            base_url = _INDIA_TESTNET if DELTA_TESTNET else _INDIA_LIVE
+            session = await self._http_session()
+            async with session.get(f"{base_url}/v2/tickers/{SYMBOL.split(':')[0].replace('/', '')}") as resp:
+                data = await resp.json()
+            info = data.get("result") or {}
+            last = float(info.get("close") or 0.0)
+            return {
+                "last": last,
+                "close": last,
+                "markPrice": float(info.get("mark_price") or 0.0),
+                "info": info,
+            }
+        except Exception as exc:
+            logger.warning(f"[PAPER] fetch_ticker failed: {exc}")
+            return None
+
+    async def _market_price(self) -> float:
+        ticker = await self.fetch_ticker()
+        if ticker:
+            price = float(ticker.get("last") or 0.0)
+            if price > 0:
+                return price
+        return 0.0
 
     async def fetch_open_position(self) -> Optional[dict]:
         return self._position
@@ -529,28 +584,67 @@ class PaperOrderManager:
     async def cancel_all_orders(self) -> None:
         logger.debug("[PAPER] cancel_all_orders (simulated)")
 
-    async def place_entry(self, is_long: bool, msg: dict = None,
-                           risk_levels=None, signal_bar_open: float = 0.0) -> dict:
-        entry_price = signal_bar_open if signal_bar_open > 0 else 60000.0
-        self._is_long = is_long
-        self._entry_price = entry_price
-        self._position = {"side": "long" if is_long else "short",
-                          "entry_price": entry_price, "qty": 1, "is_paper": True}
-        order = {"id": f"paper_{int(time.time()*1000)}", "price": entry_price,
-                 "filled": 1, "status": "closed"}
-        logger.info(f"[PAPER] ENTRY {'LONG' if is_long else 'SHORT'} at {entry_price:.2f}")
+    async def place_entry(
+        self,
+        is_long: bool,
+        sl: float,
+        tp: float,
+        atr: float = 1.0,
+        entry_price: float = 0.0,
+    ) -> dict:
+        """Simulated market entry — fills at the real signal price passed in
+        (or a live public ticker as fallback). Same signature as OrderManager."""
+        fill = entry_price if entry_price > 0 else await self._market_price()
+        self._is_long     = is_long
+        self._entry_price = fill
+        self._current_sl  = float(sl)
+        self._current_tp  = float(tp)
+        self._position = {
+            "side": "long" if is_long else "short",
+            "entry_price": fill,
+            "qty": ALERT_QTY,
+            "sl": float(sl),
+            "tp": float(tp),
+            "is_paper": True,
+        }
+        order = {"id": f"paper_{int(time.time()*1000)}", "price": fill,
+                 "average": fill, "filled": ALERT_QTY, "status": "closed"}
+        logger.info(
+            f"[PAPER] ENTRY {'LONG' if is_long else 'SHORT'} at {fill:.2f}  "
+            f"sl={sl:.2f}  tp={tp:.2f}  qty={ALERT_QTY}"
+        )
         return order
 
-    async def close_position(self, reason: str = "Exit") -> dict:
+    async def close_position(
+        self,
+        is_long: Optional[bool] = None,
+        reason: str = "Exit",
+        expected_price: Optional[float] = None,
+    ) -> dict:
+        """Simulated market close — fills at the caller's expected price
+        (real trail-monitor tick), else a live public ticker, else entry."""
         if not self._position:
-            return {}
-        exit_price = 60000.0
-        gp = (exit_price - self._entry_price) * 1 if self._is_long else (self._entry_price - exit_price) * 1
+            return {"info": "already_closed"}
+        exit_price = float(expected_price or 0.0)
+        if exit_price <= 0:
+            exit_price = await self._market_price()
+        if exit_price <= 0:
+            exit_price = self._entry_price
+        long_side = self._is_long if is_long is None else is_long
+        gp = ((exit_price - self._entry_price) if long_side
+              else (self._entry_price - exit_price))
         order = {"id": f"paper_exit_{int(time.time()*1000)}", "price": exit_price,
-                 "filled": 1, "status": "closed", "gross_pl": gp, "exit_reason": reason}
-        logger.info(f"[PAPER] EXIT at {exit_price:.2f} | {reason}")
-        self._position = None; self._is_long = None
+                 "average": exit_price, "filled": ALERT_QTY, "status": "closed",
+                 "gross_pl": gp, "exit_reason": reason}
+        logger.info(f"[PAPER] EXIT at {exit_price:.2f} | {reason} | points={gp:+.2f}")
+        self._position = None
+        self._is_long = None
+        self._current_sl = None
+        self._current_tp = None
         return order
+
+    async def close_position_market(self, reason: str = "Manual stop") -> dict:
+        return await self.close_position(reason=reason)
 
     async def fetch_bracket_fill_price(self) -> Optional[float]:
         return None
@@ -559,6 +653,8 @@ class PaperOrderManager:
         pass
 
     async def close_exchange(self) -> None:
+        if self._http and not self._http.closed:
+            await self._http.close()
         logger.debug("[PAPER] close_exchange (simulated)")
 
 
