@@ -193,18 +193,33 @@ class Telegram:
             f"Worst     : <code>{summary['worst']:.4f} USD</code>"
         )
 
-    # ── Silenced ──────────────────────────────────────────────────────────────
+    # ── Position management updates ───────────────────────────────────────────
 
     async def notify_breakeven(self, entry_price: float) -> None:
-        pass
+        await self._send(
+            f"🔒 <b>SL → BREAKEVEN</b>\n"
+            f"<code>{Telegram._now_ist()}</code>\n\n"
+            f"Stop moved to entry: <b>${entry_price:,.2f}</b>\n"
+            f"Trade is now risk-free."
+        )
 
     async def notify_trail_stage(
         self, old_stage: int, new_stage: int, price: float, new_sl: float
     ) -> None:
-        pass
+        await self._send(
+            f"📈 <b>TRAIL STAGE {old_stage} → {new_stage}</b>\n"
+            f"<code>{Telegram._now_ist()}</code>\n\n"
+            f"Price  : <b>${price:,.2f}</b>\n"
+            f"New SL : <code>${new_sl:,.2f}</code>"
+        )
 
     async def notify_max_sl(self, price: float, entry_price: float) -> None:
-        pass
+        await self._send(
+            f"⛔ <b>MAX SL HIT</b>\n"
+            f"<code>{Telegram._now_ist()}</code>\n\n"
+            f"Entry : <code>${entry_price:,.2f}</code>\n"
+            f"Price : <b>${price:,.2f}</b>"
+        )
 
     # ── Cleanup ───────────────────────────────────────────────────────────────
 
