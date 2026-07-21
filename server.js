@@ -250,12 +250,21 @@ async function handleRequest(req, res) {
   }
 
   // ── GET / — serve dashboard HTML ─────────────────────
-  let filePath = pathname === '/' ? '/dashboard.html' : pathname;
-  const fullPath = path.join(__dirname, filePath);
+  // Allowlist only: never serve arbitrary files from the app dir (which holds
+  // .env, ecosystem.config.js, source, etc.). The dashboard uses CDN assets, so
+  // the only file we expose is dashboard.html.
+  const SERVE_ALLOW = { '/': 'dashboard.html', '/dashboard.html': 'dashboard.html' };
+  const allowed = SERVE_ALLOW[pathname];
+  if (!allowed) {
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Not found');
+    return;
+  }
+  const fullPath = path.join(__dirname, allowed);
 
   try {
     const content = fs.readFileSync(fullPath);
-    const ext = path.extname(filePath);
+    const ext = path.extname(allowed);
     res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
     res.end(content);
   } catch (err) {

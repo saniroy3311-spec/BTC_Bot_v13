@@ -29,6 +29,7 @@ import errno
 import json
 import logging
 import os
+import secrets
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -52,9 +53,9 @@ DASHBOARD_DIR = os.path.dirname(os.path.abspath(__file__))
 # "Address already in use" crash loop on pm2 restart).
 _BIND_RETRY_SECONDS = float(os.environ.get("DASHBOARD_BIND_RETRY", "20"))
 
-# ── Basic Auth credentials (set in .env or change defaults here) ──────────────
-DASH_USER = os.environ.get("DASHBOARD_USER", "shiva")
-DASH_PASS = os.environ.get("DASHBOARD_PASS", "sniper123")
+# ── Basic Auth credentials (set in .env — no insecure defaults) ───────────────
+DASH_USER = os.environ.get("DASHBOARD_USER", "admin")
+DASH_PASS = os.environ.get("DASHBOARD_PASS", "")  # blank = auth cannot succeed
 _AUTH_TOKEN = base64.b64encode(f"{DASH_USER}:{DASH_PASS}".encode()).decode()
 
 # ── Shared state (set by main.py before server starts) ────────────────────────
@@ -146,11 +147,13 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _check_auth(self) -> bool:
         """Return True if request has valid Basic Auth credentials."""
-        auth_header = self.headers.get("Authorization", "")
-        if auth_header.startswith("Basic "):
-            token = auth_header[6:]
-            if token == _AUTH_TOKEN:
-                return True
+        # Fail closed: if no password is configured, no request is authorized.
+        if DASH_PASS:
+            auth_header = self.headers.get("Authorization", "")
+            if auth_header.startswith("Basic "):
+                token = auth_header[6:]
+                if secrets.compare_digest(token, _AUTH_TOKEN):
+                    return True
         # Send 401 — browser will show login popup
         self.send_response(401)
         self.send_header("WWW-Authenticate", 'Basic realm="BTC Bot v13 Dashboard"')
@@ -159,9 +162,7 @@ class _Handler(BaseHTTPRequestHandler):
         return False
 
     def do_GET(self):
-        # auth disabled
-        pass
-        if False:
+        if not self._check_auth():
             return
 
         parsed = urlparse(self.path)
@@ -244,11 +245,11 @@ def start() -> None:
     """
     global _httpd
 
-    # Warn loudly if the shipped default password is still in use on a
-    # publicly reachable bind. Anyone scanning the VPS can otherwise log in.
-    if DASH_PASS == "sniper123" and HOST not in ("127.0.0.1", "localhost"):
+    # Warn loudly if no password is configured on a publicly reachable bind.
+    # Auth fails closed in that case, but the operator should know why.
+    if not DASH_PASS and HOST not in ("127.0.0.1", "localhost"):
         logger.warning(
-            "[SERVER] ⚠ Dashboard is using the DEFAULT password on a public "
+            "[SERVER] ⚠ No DASHBOARD_PASS set on a public "
             "bind. Set DASHBOARD_PASS in your .env (and consider "
             "DASHBOARD_HOST=127.0.0.1 + an SSH tunnel)."
         )

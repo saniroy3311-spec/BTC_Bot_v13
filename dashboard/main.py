@@ -23,7 +23,7 @@ def _repo(filename: str) -> str:
 app = FastAPI(title="BTC Bot v13 Bot Dashboard API")
 
 DASHBOARD_USER = os.environ.get("DASHBOARD_USER", "admin")
-DASHBOARD_PASS = os.environ.get("DASHBOARD_PASS", "Sani@3010")
+DASHBOARD_PASS = os.environ.get("DASHBOARD_PASS", "")  # no default — set in .env
 SESSIONS = {}
 
 @app.middleware("http")
@@ -99,7 +99,8 @@ async def login(request: Request):
     form = await request.form()
     username = form.get("username", "")
     password = form.get("password", "")
-    if username == DASHBOARD_USER and password == DASHBOARD_PASS:
+    # Fail closed if no password is configured (never allow blank-password login).
+    if DASHBOARD_PASS and secrets.compare_digest(username, DASHBOARD_USER) and secrets.compare_digest(password, DASHBOARD_PASS):
         token = secrets.token_hex(32)
         SESSIONS[token] = True
         response = RedirectResponse(url="/", status_code=302)
@@ -117,10 +118,13 @@ async def logout(request: Request):
     return resp
 
 
-# Enable CORS for development
+# CORS: restrict to configured origins. A cookie-authenticated API must not use
+# "*" with credentials (the browser rejects it, and it would allow any site to
+# make authenticated requests). Set DASHBOARD_CORS_ORIGINS=comma,separated,urls.
+_cors_origins = [o.strip() for o in os.environ.get("DASHBOARD_CORS_ORIGINS", "").split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
