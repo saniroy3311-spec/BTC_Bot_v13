@@ -17,3 +17,51 @@ ecosystem.config.js
 .env
 __pycache__/
 *.pyc
+
+# System / shell
+.bash_history
+.bashrc
+.profile
+.lesshst
+.wget-hsts
+.gitconfig
+.git-credentials
+
+# Credentials / secrets - NEVER track these
+.ssh/
+.gnupg/
+.gog-keyring-pass
+.env.backup*
+*.tar.gz
+
+# Caches / tool state
+.cache/
+.config/
+.local/
+.npm/
+.pm2/
+.turso/
+.docker/
+.notebooklm/
+.openclaw/
+snap/
+
+# Unrelated projects (not part of this repo)
+BTC_Bot_v13/
+Bot-v10/
+Kronos-ai-Sani/
+Opensource-LLM_ResumeGen/
+shiva-dashboard/
+notebooklm/
+
+# Logs / runtime data / backups
+*.log
+*.db
+*.db.bak*
+*.bak
+*.bak-*
+health.json
+ats-env-*
+ats-update.tar.gz
+docker-compose*.yml
+openclaw-*
