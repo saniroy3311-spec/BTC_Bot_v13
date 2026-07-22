@@ -65,3 +65,6 @@ ats-env-*
 ats-update.tar.gz
 docker-compose*.yml
 openclaw-*
+*.bak-*
+telegram_controller_fixed.py.bak
+manager.py.bak-*
