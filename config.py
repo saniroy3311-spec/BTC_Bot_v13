@@ -395,7 +395,7 @@ SL_CONFIRM_MS = int(os.environ.get("SL_CONFIRM_MS", "1500"))
 # Cost on a real SL hit: ~5 extra ticks of slippage (typically <10 pts).
 # Gain: eliminates premature exits from the Binance/Delta fight.
 # Set to 0 to disable and fall back to SL_CONFIRM_MS time-based mode.
-SL_CONFIRM_TICKS = int(os.environ.get("SL_CONFIRM_TICKS", "5"))
+SL_CONFIRM_TICKS = int(os.environ.get("SL_CONFIRM_TICKS", "0"))
 
 # ──────────────────────────────────────────────────────────────────
 # TRAIL SL CONFIRMATION — POST-ARM  (FIX-TRAIL-INTRABAR)
@@ -409,7 +409,7 @@ SL_CONFIRM_TICKS = int(os.environ.get("SL_CONFIRM_TICKS", "5"))
 # 2 = 2 consecutive Delta ticks (~2s)  ← recommended
 # 1 = first Delta tick below trail SL  ← closest to Pine, riskier
 # 0 = use SL_CONFIRM_TICKS (no separate post-arm threshold)
-TRAIL_SL_CONFIRM_TICKS = int(os.environ.get("TRAIL_SL_CONFIRM_TICKS", "2"))
+TRAIL_SL_CONFIRM_TICKS = int(os.environ.get("TRAIL_SL_CONFIRM_TICKS", "0"))
 
 # ──────────────────────────────────────
 # TRAIL OFFSET FLOOR  (TUNED FOR BETTER CAPTURE)
