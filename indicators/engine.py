@@ -452,29 +452,36 @@ def compute_full_series(df: pd.DataFrame) -> pd.DataFrame:
 
 def evaluate(snap: IndicatorSnapshot, has_position: bool = False) -> Signal:
     """
-    RSI Bounce Strategy — RSI cross in trend direction.
+    TREND BREAKOUT Strategy (TREND_ONLY_TP_ON) — Matches radical_optimize.py _sig().
 
-    BEAR (close < EMA100): SHORT when RSI crosses ABOVE SHORT_ENTER, capped at SHORT_EXIT
-    BULL (close > EMA100): LONG when RSI crosses BELOW LONG_ENTER, floored at LONG_EXIT
+    Only trades in trend regime (ADX > 22). No range/counter-trend trades.
+    Long:  close > prev_high  AND ema_fast > ema_trend  AND dip > dim  AND filters_ok
+    Short: close < prev_low   AND ema_fast < ema_trend  AND dim > dip  AND filters_ok
 
-    SL = ATR * SL_ATR_MULT  |  TP = SL * TP_RR_MULT
+    SL = ATR * TREND_ATR_MULT  |  TP = SL * TREND_RR
     """
     if has_position:
         return Signal(SignalType.NONE, False, False, "NONE")
 
-    from config import (
-        RSI_BOUNCE_LONG_ENTER, RSI_BOUNCE_LONG_EXIT,
-        RSI_BOUNCE_SHORT_ENTER, RSI_BOUNCE_SHORT_EXIT,
-    )
+    # Trend regime check
+    if not snap.trend_regime:
+        return Signal(SignalType.NONE, False, False, "NONE")
 
-    rsi = snap.rsi
-    prsi = snap.prev_rsi
+    # Filters check
+    if not snap.filters_ok:
+        return Signal(SignalType.NONE, False, False, "NONE")
 
-    if snap.close < snap.ema_trend and rsi > RSI_BOUNCE_SHORT_ENTER and rsi < RSI_BOUNCE_SHORT_EXIT and prsi <= RSI_BOUNCE_SHORT_ENTER:
-        return Signal(SignalType.TREND_SHORT, is_long=False, is_trend=True, regime="BEAR")
+    # Long: Trend breakout up
+    if (snap.close > snap.prev_high and
+        snap.ema_fast > snap.ema_trend and
+        snap.dip > snap.dim):
+        return Signal(SignalType.TREND_LONG, True, True, "trend_breakout_long")
 
-    if snap.close > snap.ema_trend and rsi < RSI_BOUNCE_LONG_ENTER and rsi > RSI_BOUNCE_LONG_EXIT and prsi >= RSI_BOUNCE_LONG_ENTER:
-        return Signal(SignalType.TREND_LONG, is_long=True, is_trend=True, regime="BULL")
+    # Short: Trend breakout down
+    if (snap.close < snap.prev_low and
+        snap.ema_fast < snap.ema_trend and
+        snap.dim > snap.dip):
+        return Signal(SignalType.TREND_SHORT, False, True, "trend_breakout_short")
 
     return Signal(SignalType.NONE, False, False, "NONE")
 
