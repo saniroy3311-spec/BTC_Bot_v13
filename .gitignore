@@ -14,3 +14,4 @@ config.json
 
 # Secrets — never commit (use .env.example as the template)
 ecosystem.config.js
+.env
