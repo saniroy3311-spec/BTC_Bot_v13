@@ -68,3 +68,6 @@ openclaw-*
 *.bak-*
 telegram_controller_fixed.py.bak
 manager.py.bak-*
+auto_fix.py
+patch_ghost_trail.py
+start_ngrok.sh
