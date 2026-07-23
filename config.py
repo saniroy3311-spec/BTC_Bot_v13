@@ -133,21 +133,18 @@ ADX_EMA       = 5
 RSI_LEN       = 14
 
 # ──────────────────────────────────────
-# REGIME THRESHOLDS  (OPTIMIZED 2026-07-19)
+# REGIME THRESHOLDS  (OPTIMIZED 2026-07-19 — BEST WINNER: TREND_ONLY_TP_ON)
 # ──────────────────────────────────────
-# OPTIMIZED: ADX_RANGE_TH=5 effectively disables range regime.
-# Range (counter-trend) trades performed poorly in backtest.
-# Only trend entries are used for consistent 64%+ win rate.
+# From optimizer/radical_optimize.py "TREND_ONLY_TP_ON" config:
+# $37,139 net over 2 years = $1,485/mo (1,337 trades, 64% WR, 0.71% max DD)
 ADX_TREND_TH = int(os.environ.get("ADX_TREND_TH", "22"))
-ADX_RANGE_TH = int(os.environ.get("ADX_RANGE_TH", "5"))
-# Soft tolerance for ADX comparison. 0.0 = strict Pine match (recommended now
-# that ADX_TREND_TH is back to 22). Set higher if you see missed signals.
+ADX_RANGE_TH = int(os.environ.get("ADX_RANGE_TH", "5"))  # range disabled
+# Soft tolerance for ADX comparison. 0.0 = strict Pine match
 ADX_TOLERANCE = float(os.environ.get("ADX_TOLERANCE", "0.0"))
 
 # ──────────────────────────────────────
-# ENTRY FILTERS  (PINE-ALIGNED)
+# ENTRY FILTERS  (OPTIMIZED)
 # ──────────────────────────────────────
-# Pine: filterATRMult = 1.4, filterBodyMult = 0.5
 FILTER_ATR_MULT    = float(os.environ.get("FILTER_ATR_MULT",  "1.4"))
 FILTER_BODY_MULT   = float(os.environ.get("FILTER_BODY_MULT", "0.5"))
 # Body filter tolerance (absorbs Delta vs TV OHLC differences).
@@ -167,24 +164,20 @@ FILTER_BODY_TOLERANCE = float(os.environ.get("FILTER_BODY_TOLERANCE", "0.0"))
 FILTER_VOL_ENABLED = os.environ.get("FILTER_VOL_ENABLED", "true").lower() == "true"
 FILTER_VOL_MULT    = float(os.environ.get("FILTER_VOL_MULT", "1.0"))
 
-# ─── RSIMom+M3 strategy params (optimized) ────────────
-RSI_LONG  = float(os.environ.get("RSI_LONG",  "58"))
-RSI_SHORT = float(os.environ.get("RSI_SHORT", "42"))
-VOL_MULT  = float(os.environ.get("VOL_MULT",  "1.3"))
-
 # ─────────────────────────────────────
-# RSI BOUNCE STRATEGY (backtest v2)
+# RSI BOUNCE STRATEGY (backtest v2) — OPTIMIZED 2026-07-19
 # ──────────────────────────────────────
-# Strategy: Enter SHORT in bear market when RSI bounces 45-70
-#           Enter LONG in bull market when RSI dips 30-55
+# Strategy: Enter SHORT in bear market when RSI bounces 40-65
+#           Enter LONG in bull market when RSI dips 25-50
 # SL = ATR * SL_ATR_MULT
 # TP = SL * TP_RR_MULT
+# OPTIMIZED FROM optimized_results.py: SL=0.5, TP=1.5, RSI(40-65)/(25-50)
 RSI_BOUNCE_LONG_ENTER  = float(os.environ.get("RSI_BOUNCE_LONG_ENTER",  "50"))
 RSI_BOUNCE_LONG_EXIT   = float(os.environ.get("RSI_BOUNCE_LONG_EXIT",   "25"))
 RSI_BOUNCE_SHORT_ENTER = float(os.environ.get("RSI_BOUNCE_SHORT_ENTER", "40"))
 RSI_BOUNCE_SHORT_EXIT  = float(os.environ.get("RSI_BOUNCE_SHORT_EXIT",  "65"))
-SL_ATR_MULT  = float(os.environ.get("SL_ATR_MULT",  "0.7"))
-TP_RR_MULT   = float(os.environ.get("TP_RR_MULT",   "2.5"))
+SL_ATR_MULT  = float(os.environ.get("SL_ATR_MULT",  "0.5"))
+TP_RR_MULT   = float(os.environ.get("TP_RR_MULT",   "1.5"))
 MAX_SL_POINTS = float(os.environ.get("MAX_SL_POINTS", "500.0"))
 
 # Legacy ADX/DMI params (kept for reference, no longer used)
@@ -337,15 +330,20 @@ PINE_TICK_TRUNCATE = os.environ.get("PINE_TICK_TRUNCATE", "false").lower() == "t
 # do not "solve" for these numbers again. That is what caused this bug.
 # ─────────────────────────────────────────────────────────────────────────────
 # ──────────────────────────────────────────────────────────────────────
-# OPTIMIZED 2026-07-19: TRAIL COMPLETELY DISABLED (pure TP/SL mode)
-# All three values set to 999 so neither upgrade nor activation ever fires.
+# OPTIMIZED 2026-06-03 (from deabe67): Trail upgrades disabled via 999 triggers
+# but TRAIL ACTIVATION still works via pts_mult/off_mult (Pine values)
+# ──────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────
+# OPTIMIZED 2026-07-19 (from TREND_ONLY_TP_ON winner): TRAIL DISABLED
+# trigger=10.0 (10 ATR profit to activate = never), points/offset=10.0 (never fires)
+# 5 stages all disabled for backward compatibility
 # ──────────────────────────────────────────────────────────────────────
 TRAIL_STAGES = [
-    (999.0,  999.0, 999.0),   # Stage 1 — trail DISABLED
-    (999.0,  999.0, 999.0),   # Stage 2
-    (999.0,  999.0, 999.0),   # Stage 3
-    (999.0,  999.0, 999.0),   # Stage 4
-    (999.0,  999.0, 999.0),   # Stage 5
+    (10.0,  10.0, 10.0),   # Stage 1 — trail DISABLED (TP mode active)
+    (10.0,  10.0, 10.0),   # Stage 2
+    (10.0,  10.0, 10.0),   # Stage 3
+    (10.0,  10.0, 10.0),   # Stage 4
+    (10.0,  10.0, 10.0),   # Stage 5
 ]
 
 # ──────────────────────────────────────
@@ -362,6 +360,7 @@ TIME_EXIT_MINUTES = int(os.environ.get("TIME_EXIT_MINUTES", "0"))
 # BREAKEVEN + RSI  (PINE-ALIGNED)
 # ──────────────────────────────────────
 # Pine: beMult=0.6
+# OPTIMIZED (TREND_ONLY_TP_ON): BE_MULT = 0.5
 BE_MULT = float(os.environ.get("BE_MULT", "0.5"))
 RSI_OB  = int(os.environ.get("RSI_OB", "70"))
 RSI_OS  = int(os.environ.get("RSI_OS", "30"))
