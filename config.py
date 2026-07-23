@@ -183,7 +183,7 @@ RSI_BOUNCE_LONG_ENTER  = float(os.environ.get("RSI_BOUNCE_LONG_ENTER",  "50"))
 RSI_BOUNCE_LONG_EXIT   = float(os.environ.get("RSI_BOUNCE_LONG_EXIT",   "25"))
 RSI_BOUNCE_SHORT_ENTER = float(os.environ.get("RSI_BOUNCE_SHORT_ENTER", "40"))
 RSI_BOUNCE_SHORT_EXIT  = float(os.environ.get("RSI_BOUNCE_SHORT_EXIT",  "65"))
-SL_ATR_MULT  = float(os.environ.get("SL_ATR_MULT",  "0.6"))
+SL_ATR_MULT  = float(os.environ.get("SL_ATR_MULT",  "0.7"))
 TP_RR_MULT   = float(os.environ.get("TP_RR_MULT",   "2.5"))
 MAX_SL_POINTS = float(os.environ.get("MAX_SL_POINTS", "500.0"))
 
@@ -336,12 +336,16 @@ PINE_TICK_TRUNCATE = os.environ.get("PINE_TICK_TRUNCATE", "false").lower() == "t
 # tuning parameters. If a trade does not match, the divergence is elsewhere —
 # do not "solve" for these numbers again. That is what caused this bug.
 # ─────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────
+# OPTIMIZED 2026-07-19: TRAIL COMPLETELY DISABLED (pure TP/SL mode)
+# All three values set to 999 so neither upgrade nor activation ever fires.
+# ──────────────────────────────────────────────────────────────────────
 TRAIL_STAGES = [
-    (999.0,  0.50, 0.40),   # Stage 1 — OPTIMIZED: trail disabled (TP mode active)
-    (999.0,  0.40, 0.30),   # Stage 2
-    (999.0,  0.30, 0.25),   # Stage 3
-    (999.0,  0.20, 0.15),   # Stage 4
-    (999.0,  0.15, 0.10),   # Stage 5
+    (999.0,  999.0, 999.0),   # Stage 1 — trail DISABLED
+    (999.0,  999.0, 999.0),   # Stage 2
+    (999.0,  999.0, 999.0),   # Stage 3
+    (999.0,  999.0, 999.0),   # Stage 4
+    (999.0,  999.0, 999.0),   # Stage 5
 ]
 
 # ──────────────────────────────────────
