@@ -186,25 +186,10 @@ async function handleRequest(req, res) {
 
       // Bot can push any combination of fields
       if (body.botStatus !== undefined) {
-        const oldStatus = state.botStatus ? state.botStatus.status : null;
         state.botStatus = body.botStatus;
-        if (body.botStatus.status && body.botStatus.status !== oldStatus) {
-          sendTelegram(formatStatusNotification(body.botStatus.status, oldStatus));
-        }
       }
       if (body.openTrade !== undefined) {
-        const ot = body.openTrade;
-        state.openTrade = ot;
-        // Notify on new open trade
-        if (ot && ot.direction && ot.entryPrice) {
-          const dirEmoji = ot.direction === 'long' ? '🟢' : '🔴';
-          sendTelegram(
-            `<b>${dirEmoji} Trade Opened</b>\n` +
-            `${ot.direction.toUpperCase()} ${ot.symbol || 'BTCUSD'}\n` +
-            `Entry: $${Number(ot.entryPrice).toLocaleString()}\n` +
-            `SL: $${Number(ot.sl || 0).toLocaleString()} | TP: $${Number(ot.tp || 0).toLocaleString()}`
-          );
-        }
+        state.openTrade = body.openTrade;
       }
       if (body.trade) {
         // Single new trade — append or update
@@ -213,11 +198,7 @@ async function handleRequest(req, res) {
           state.trades[idx] = body.trade;
         } else {
           state.trades.push(body.trade);
-          // Notify Telegram only for new trades (not duplicates)
-          if (!notifiedTrades.has(body.trade.id)) {
-            notifiedTrades.add(body.trade.id);
-            sendTelegram(formatTradeNotification(body.trade));
-          }
+          notifiedTrades.add(body.trade.id);
         }
       }
       if (body.trades) {
@@ -229,9 +210,7 @@ async function handleRequest(req, res) {
       if (body.currentStep !== undefined) state.currentStep = body.currentStep;
       // Also accept flat fields that match the model directly
       if (body.status) {
-        const oldStatus = state.botStatus ? state.botStatus.status : null;
         state.botStatus = { status: body.status, qty: body.qty, contractSize: body.contractSize, timeframe: body.timeframe, lastUpdate: state.lastUpdate };
-        if (body.status !== oldStatus) sendTelegram(formatStatusNotification(body.status, oldStatus));
       }
       if (body.direction) state.openTrade = { direction: body.direction, entryPrice: body.entryPrice, entryTime: body.entryTime, sl: body.sl, tp: body.tp, currentPrice: body.currentPrice, unrealizedPnl: body.unrealizedPnl };
 
