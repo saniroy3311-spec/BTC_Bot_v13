@@ -12,7 +12,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || process.env.DASHBOARD_PORT || 3005;
 
 // ─── Telegram config ───────────────────────────────────────
 // Priority: config.json > env vars > no notifications
@@ -264,6 +264,9 @@ async function handleRequest(req, res) {
 
 // ─── Start ─────────────────────────────────────────────────
 const server = http.createServer(handleRequest);
+server.on('error', (err) => {
+  console.error(`[Server Error] ${err.message}`);
+});
 server.listen(PORT, () => {
   console.log(`Shiva Sniper Dashboard Server`);
   console.log(`  Dashboard: http://0.0.0.0:${PORT}/`);
