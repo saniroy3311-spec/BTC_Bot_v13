@@ -599,7 +599,8 @@ function renderLive(){
   const unrEl=document.getElementById('stUnr'),unrSub=document.getElementById('stUnrSub');
   const liveGrid=document.getElementById('liveGrid');
 
-  const hasTrade = Boolean(ot && typeof ot === 'object' && (ot.id || ot.entryPrice || ot.direction));
+  const dir = ot && ot.direction ? String(ot.direction).toLowerCase() : '';
+  const hasTrade = Boolean(ot && typeof ot === 'object' && (dir === 'long' || dir === 'short'));
   if(hasTrade){
     const long=ot.direction==='long';
     dirEl.textContent=long?'Long':'Short';
