@@ -37,7 +37,7 @@ body{font-family:var(--body);background:
   radial-gradient(1200px 500px at 80% -10%,rgba(46,134,222,0.10),transparent 60%),
   radial-gradient(900px 500px at -5% 10%,rgba(124,92,224,0.10),transparent 55%),
   var(--paper);color:var(--ink);line-height:1.5;font-size:15px;font-weight:500}
-.app{max-width:1180px;margin:0 auto;padding:0 18px 20px}
+.app{max-width:1920px;margin:0 auto;padding:0 24px 30px}
 
 /* ═══════════ Masthead ═══════════ */
 .masthead{display:flex;align-items:center;gap:14px;padding:12px 0 10px;border-bottom:3px solid var(--ink);margin-bottom:12px;flex-wrap:wrap}
@@ -352,15 +352,17 @@ table.monthly .mbar-col{width:26%}
     <div class="panel log-panel">
       <div class="panel-head"><h2>Trade Blotter</h2><span class="meta" id="blotterMeta"></span></div>
       <table class="blotter" id="blotter"><thead><tr>
-          <th data-sort="entryTime" class="sort-desc">Entry <span class="arr">▼</span></th>
+          <th data-sort="entryTime" class="sort-desc">Entry Time (IST) <span class="arr">▼</span></th>
+          <th data-sort="exitTime">Exit Time (IST) <span class="arr">▼</span></th>
           <th data-sort="direction">Dir <span class="arr">▼</span></th>
-          <th data-sort="entryPrice">Entry $ <span class="arr">▼</span></th>
-          <th data-sort="exitPrice">Exit $ <span class="arr">▼</span></th>
-          <th data-sort="pointsCaptured">Points <span class="arr">▼</span></th>
-          <th data-sort="exitReason">Exit via <span class="arr">▼</span></th>
-          <th data-sort="grossPnl">Gross <span class="arr">▼</span></th>
-          <th data-sort="totalCommission">Fees <span class="arr">▼</span></th>
-          <th data-sort="netPnl">Net <span class="arr">▼</span></th>
+          <th data-sort="qty" class="num">Qty (Lots) <span class="arr">▼</span></th>
+          <th data-sort="entryPrice" class="num">Entry Price <span class="arr">▼</span></th>
+          <th data-sort="exitPrice" class="num">Exit Price <span class="arr">▼</span></th>
+          <th data-sort="pointsCaptured" class="num">Points <span class="arr">▼</span></th>
+          <th data-sort="exitReason">Exit Reason <span class="arr">▼</span></th>
+          <th data-sort="grossPnl" class="num">Gross P&L <span class="arr">▼</span></th>
+          <th data-sort="totalCommission" class="num">Fees <span class="arr">▼</span></th>
+          <th data-sort="netPnl" class="num">Net P&L <span class="arr">▼</span></th>
           <th>Hold</th>
         </tr></thead><tbody id="blotterBody"></tbody></table>
       <div class="log-empty" id="logEmpty">No trades yet — the blotter fills as the bot closes trades.</div>
@@ -641,9 +643,12 @@ function renderLog(){
 
   tbody.innerHTML=sorted.map(t=>{
     const w=t.netPnl>=0,hold=t.exitTime-t.entryTime;
+    const qtyLots = t.qty ? t.qty : 100;
     return'<tr>'+
-      '<td>'+fmtTime(t.entryTime)+'</td>'+
+      '<td style="white-space:nowrap;font-family:var(--mono);font-size:0.82rem;">'+fmtTime(t.entryTime)+'</td>'+
+      '<td style="white-space:nowrap;font-family:var(--mono);font-size:0.82rem;">'+fmtTime(t.exitTime)+'</td>'+
       '<td><span class="dir-mark '+t.direction+'">'+(t.direction==='long'?'▲ L':'▼ S')+'</span></td>'+
+      '<td class="num" style="font-family:var(--mono);"><b>'+qtyLots+'</b> <span style="font-size:0.7rem;color:var(--ink-3)">lots</span></td>'+
       '<td class="num">$'+Number(t.entryPrice||0).toLocaleString()+'</td>'+
       '<td class="num">$'+Number(t.exitPrice||0).toLocaleString()+'</td>'+
       '<td class="num '+(t.pointsCaptured>=0?'pos':'neg')+'">'+t.pointsCaptured.toFixed(0)+'</td>'+
