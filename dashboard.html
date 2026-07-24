@@ -1553,24 +1553,21 @@ setInterval(fetchLiveCandles,10000);
   if(!window.matchMedia('(prefers-reduced-motion:reduce)').matches) frame();
 })();
 
-/* ─── Particle Burst Engine for FLAT / Waiting state ─── */
+/* ─── Full-Space Signal Strength Bars & Particle Field for FLAT state ─── */
 (function(){
-  let burstParticles = [];
+  let fieldParticles = [];
 
-  function spawnParticle(W, H){
-    const cx = W / 2, cy = H / 2;
-    const colors = ['#00ff88', '#00e676', '#ff3b5c', '#ff6b6b', '#2e86de', '#ffffff'];
-    const angle = Math.random() * Math.PI * 2;
-    const speed = 1.2 + Math.random() * 4.5;
+  function spawnFieldParticle(W, H){
+    const colors = ['#00ff88', '#00e676', '#ff3b5c', '#ff6b6b', '#2e86de', '#ffffff', '#ff9500'];
     return {
-      x: cx + (Math.random() - 0.5) * 20,
-      y: cy + (Math.random() - 0.5) * 10,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed * 0.42,
-      r: Math.random() * 3.0 + 1.0,
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 1.6,
+      vy: (Math.random() - 0.5) * 0.8,
+      r: Math.random() * 2.5 + 1.0,
       color: colors[Math.floor(Math.random() * colors.length)],
-      life: 0.1 + Math.random() * 0.9,
-      decay: 0.012 + Math.random() * 0.018
+      life: Math.random(),
+      decay: 0.008 + Math.random() * 0.015
     };
   }
 
@@ -1597,6 +1594,9 @@ setInterval(fetchLiveCandles,10000);
     return 0.5;
   }
 
+  /* Signal Filter Names for HUD */
+  const FILTER_NAMES = ['EMA TREND', 'RSI MOMENTUM', 'ATR VOLATILITY', 'VOLUME FILTER', 'PINE LOCK'];
+
   function frame(){
     const c = document.getElementById('ekgCanvas');
     if(!c) {
@@ -1616,56 +1616,99 @@ setInterval(fetchLiveCandles,10000);
     ctx.clearRect(0,0,W,H);
 
     if(state === 'flat'){
-      /* ═══════════ PARTICLE BURST MODE (FLAT / NO TRADE) ═══════════ */
+      /* ═══════════ FULL-SPACE SIGNAL STRENGTH BARS + PARTICLE FIELD ═══════════ */
 
-      /* Grid lines — cyber style */
-      ctx.strokeStyle='rgba(0,255,136,0.08)';
+      /* 1. Cyber Grid background across whole space */
+      ctx.strokeStyle='rgba(0,255,136,0.06)';
       ctx.lineWidth=1;
-      for(let x=0;x<W;x+=30){
+      for(let x=0;x<W;x+=28){
         ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();
       }
       ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();
 
-      /* Central pulsing core glow */
-      const cx = W / 2, cy = H / 2;
-      const corePulse = 0.5 + 0.5 * Math.sin(Date.now() * 0.005);
-      const coreGrd = ctx.createRadialGradient(cx, cy, 2, cx, cy, 35 + corePulse * 15);
-      coreGrd.addColorStop(0, 'rgba(0,255,136,0.35)');
-      coreGrd.addColorStop(0.5, 'rgba(255,59,92,0.20)');
-      coreGrd.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = coreGrd;
-      ctx.beginPath();ctx.arc(cx, cy, 45, 0, Math.PI * 2);ctx.fill();
-
-      /* Initialize / maintenance particle pool (65 particles) */
-      while(burstParticles.length < 65){
-        burstParticles.push(spawnParticle(W, H));
+      /* 2. Full-bleed Particle Field across whole width (85 particles) */
+      while(fieldParticles.length < 85){
+        fieldParticles.push(spawnFieldParticle(W, H));
       }
-
-      /* Update & draw particles */
-      burstParticles.forEach((p, idx)=>{
+      fieldParticles.forEach((p, idx)=>{
         p.x += p.vx;
         p.y += p.vy;
         p.life -= p.decay;
 
         if(p.life <= 0 || p.x < 0 || p.x > W || p.y < 0 || p.y > H){
-          burstParticles[idx] = spawnParticle(W, H);
+          fieldParticles[idx] = spawnFieldParticle(W, H);
           return;
         }
 
-        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.globalAlpha = Math.max(0, p.life * 0.85);
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fillStyle = p.color;
         ctx.shadowColor = p.color;
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 8;
         ctx.fill();
         ctx.shadowBlur = 0;
       });
       ctx.globalAlpha = 1.0;
 
+      /* 3. Signal Strength Bars (5 equal columns spanning 100% width) */
+      const numCols = 5;
+      const colWidth = (W - 32) / numCols;
+      const tNow = Date.now() * 0.003;
+
+      for(let i = 0; i < numCols; i++){
+        const colX = 16 + i * colWidth;
+        const barW = colWidth - 14;
+        const barH = 7;
+        const barY = H / 2 - barH / 2 + 10;
+
+        /* Oscillating filter strength % (70% - 100%) */
+        const fillFrac = 0.65 + 0.30 * Math.sin(tNow + i * 1.3);
+        const fillW = barW * fillFrac;
+
+        /* Dark Track Background */
+        ctx.fillStyle = 'rgba(14, 22, 38, 0.7)';
+        ctx.strokeStyle = 'rgba(0, 255, 136, 0.25)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(colX, barY, barW, barH, 3);
+        ctx.fill();
+        ctx.stroke();
+
+        /* Animated Glowing Green Bar Fill */
+        const barGrd = ctx.createLinearGradient(colX, 0, colX + fillW, 0);
+        barGrd.addColorStop(0, '#00b368');
+        barGrd.addColorStop(1, '#00ff88');
+
+        ctx.fillStyle = barGrd;
+        ctx.shadowColor = '#00ff88';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.roundRect(colX, barY, fillW, barH, 3);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        /* Filter Label Text above bar */
+        ctx.font = 'bold 8px "JetBrains Mono", monospace';
+        ctx.fillStyle = 'rgba(0, 255, 136, 0.85)';
+        ctx.fillText(FILTER_NAMES[i], colX, barY - 4);
+      }
+
+      /* 4. Laser Scan Line sweeping left to right */
+      const scanX = (Date.now() * 0.12) % W;
+      const scanGrd = ctx.createLinearGradient(scanX - 40, 0, scanX, 0);
+      scanGrd.addColorStop(0, 'rgba(0,255,136,0)');
+      scanGrd.addColorStop(1, 'rgba(0,255,136,0.6)');
+      ctx.strokeStyle = scanGrd;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(scanX, 0);
+      ctx.lineTo(scanX, H);
+      ctx.stroke();
+
     } else {
       /* ═══════════ IN TRADE EKG MODE (LONG / SHORT) ═══════════ */
-      const cfg = (window._ekgConfig && window._ekgConfig[state]) || {speed:2.4, color:'rgba(0,255,136,', trail:340};
+      const cfg = (window._ekgConfig && window._ekgConfig[state]) || {speed:2.8, color:'rgba(0,255,136,', trail:360};
       const spd = cfg.speed;
       const col = cfg.color;
       const trail = cfg.trail;
