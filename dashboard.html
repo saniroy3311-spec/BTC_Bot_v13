@@ -428,12 +428,14 @@ canvas#equityChart{width:100% !important;height:100% !important}
 #particleCanvas.show{display:block}
 
 .log-panel{margin-top:12px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-table.blotter{width:100%;min-width:1100px;border-collapse:collapse;font-size:0.76rem;table-layout:auto}
-table.blotter th{text-align:left;padding:10px 10px;font-family:var(--disp);font-weight:700;font-size:0.62rem;text-transform:uppercase;letter-spacing:0.03em;color:#fff;background:var(--ink);cursor:pointer;user-select:none;white-space:nowrap;overflow:visible}
+table.blotter{width:100%;min-width:1150px;border-collapse:collapse;font-size:0.76rem;table-layout:auto}
+table.blotter th{text-align:left;padding:10px 14px;font-family:var(--disp);font-weight:700;font-size:0.62rem;text-transform:uppercase;letter-spacing:0.03em;color:#fff;background:var(--ink);cursor:pointer;user-select:none;white-space:nowrap;overflow:visible}
+table.blotter th.num,table.blotter td.num{text-align:right !important}
+table.blotter th.center,table.blotter td.center{text-align:center !important}
 table.blotter th:hover{color:var(--amber)}
 table.blotter th .arr{opacity:0.4}
 table.blotter th.sort-asc .arr,table.blotter th.sort-desc .arr{opacity:1;color:var(--amber)}
-table.blotter td{padding:9px 10px;border-bottom:2px solid var(--rule-soft);white-space:nowrap;overflow:visible;font-weight:600}
+table.blotter td{padding:10px 14px;border-bottom:2px solid var(--rule-soft);white-space:nowrap;overflow:visible;font-weight:600}
 table.blotter tbody tr:nth-child(even) td{background:rgba(14,22,38,0.02)}
 table.blotter tbody tr:hover td{background:var(--green-soft)}
 .num{font-family:var(--mono);text-align:right;font-weight:700}
@@ -733,14 +735,14 @@ table.monthly .mbar-col{width:26%}
           <th data-sort="entryPrice" class="num">Entry Point <span class="arr">▼</span></th>
           <th data-sort="exitTime">Exit Time (IST) <span class="arr">▼</span></th>
           <th data-sort="exitPrice" class="num">Exit Point <span class="arr">▼</span></th>
-          <th data-sort="direction">Dir <span class="arr">▼</span></th>
+          <th data-sort="direction" class="center">Dir <span class="arr">▼</span></th>
           <th data-sort="qty" class="num">Qty (Lots) <span class="arr">▼</span></th>
           <th data-sort="pointsCaptured" class="num">Points <span class="arr">▼</span></th>
-          <th data-sort="exitReason">Exit Reason <span class="arr">▼</span></th>
+          <th data-sort="exitReason" class="center">Exit Reason <span class="arr">▼</span></th>
           <th data-sort="grossPnl" class="num">Gross P&L <span class="arr">▼</span></th>
           <th data-sort="totalCommission" class="num">Fees <span class="arr">▼</span></th>
           <th data-sort="netPnl" class="num">Net P&L <span class="arr">▼</span></th>
-          <th>Hold</th>
+          <th class="num">Hold</th>
         </tr></thead><tbody id="blotterBody"></tbody></table>
       <div class="log-empty" id="logEmpty">No trades yet — the blotter fills as the bot closes trades.</div>
     </div>
@@ -1094,20 +1096,22 @@ function renderLog(){
   tbody.innerHTML=sorted.map(t=>{
     const w=t.netPnl>=0,hold=t.exitTime-t.entryTime;
     const qtyLots = t.qty ? t.qty : 100;
+    const entryFormatted = '$' + Number(t.entryPrice||0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+    const exitFormatted = '$' + Number(t.exitPrice||0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
     return'<tr>'+
       '<td style="white-space:nowrap;font-family:var(--mono);font-size:0.82rem;font-weight:700;color:var(--ink-2);">'+fmtDateOnly(t.entryTime)+'</td>'+
       '<td style="white-space:nowrap;font-family:var(--mono);font-size:0.82rem;">'+fmtTimeOnly(t.entryTime)+'</td>'+
-      '<td class="num" style="font-family:var(--mono);">$'+Number(t.entryPrice||0).toLocaleString()+'</td>'+
+      '<td class="num" style="font-family:var(--mono);">'+entryFormatted+'</td>'+
       '<td style="white-space:nowrap;font-family:var(--mono);font-size:0.82rem;">'+fmtTimeOnly(t.exitTime)+'</td>'+
-      '<td class="num" style="font-family:var(--mono);">$'+Number(t.exitPrice||0).toLocaleString()+'</td>'+
-      '<td><span class="dir-mark '+t.direction+'">'+(t.direction==='long'?'▲ L':'▼ S')+'</span></td>'+
+      '<td class="num" style="font-family:var(--mono);">'+exitFormatted+'</td>'+
+      '<td class="center"><span class="dir-mark '+t.direction+'">'+(t.direction==='long'?'▲ L':'▼ S')+'</span></td>'+
       '<td class="num" style="font-family:var(--mono);"><b>'+qtyLots+'</b> <span style="font-size:0.7rem;color:var(--ink-3)">lots</span></td>'+
       '<td class="num '+(t.pointsCaptured>=0?'pos':'neg')+'">'+t.pointsCaptured.toFixed(0)+'</td>'+
-      '<td><span class="badge '+(w?'win':'loss')+'">'+(t.exitReason||'—')+'</span>'+(t.scalperApplied?' <span class="badge scalp">scalp</span>':'')+'</td>'+
+      '<td class="center"><span class="badge '+(w?'win':'loss')+'">'+(t.exitReason||'—')+'</span>'+(t.scalperApplied?' <span class="badge scalp">scalp</span>':'')+'</td>'+
       '<td class="num '+(t.grossPnl>=0?'pos':'neg')+'">'+fmtUsdSigned(t.grossPnl)+'</td>'+
       '<td class="num">'+fmtUsd(t.totalCommission)+'</td>'+
       '<td class="num '+(w?'pos':'neg')+'"><b>'+fmtUsdSigned(t.netPnl)+'</b></td>'+
-      '<td style="white-space:nowrap;">'+fmtHold(hold)+'</td></tr>';
+      '<td class="num" style="white-space:nowrap;">'+fmtHold(hold)+'</td></tr>';
   }).join('');
 
   renderChart(tr);
