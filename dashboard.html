@@ -960,6 +960,8 @@ function renderFeedHtml(){
     :'<div class="feed-empty">Bot events appear here as they happen — cycle steps, entries, and exits.</div>';
 }
 
+let _lastGridMode = null;
+
 /* ─── Render: Live tiles + Merged/Split Open Trade & Activity (TASK 3) ─── */
 function renderLive(){
   const b=st.botStatus,ot=st.openTrade;
@@ -971,6 +973,7 @@ function renderLive(){
 
   const dir = ot && ot.direction ? String(ot.direction).toLowerCase() : '';
   const hasTrade = Boolean(ot && typeof ot === 'object' && (dir === 'long' || dir === 'short'));
+
   if(hasTrade){
     const long=ot.direction==='long';
     dirEl.textContent=long?'Long':'Short';
@@ -984,58 +987,74 @@ function renderLive(){
     const mn=Math.min(...ps),mx=Math.max(...ps),range=(mx-mn)||1;
     const pct=v=>Math.min(97,Math.max(3,(v-mn)/range*100))+'%';
 
-    liveGrid.className='live-grid split';
-    liveGrid.innerHTML=
-      '<div class="live-col">'+
-        '<div class="panel">'+
-          '<div class="panel-head"><h2>Open Trade</h2><span class="meta">' + (ot.entryTime ? ('since '+fmtTime(ot.entryTime)) : '') + '</span></div>'+
-          '<div class="panel-body">'+
-            '<div class="ot-head"><span class="ot-dir '+(long?'long':'short')+'">'+(long?'▲ LONG':'▼ SHORT')+'</span>'+
-            '<span class="ot-unr '+(u>=0?'pos':'neg')+'" style="color:'+(u>=0?'var(--green)':'var(--rust)')+'">'+fmtUsdSigned(u)+'</span></div>'+
-            '<div class="ladder">'+
-              (ot.sl?'<div class="lm sl" style="left:'+pct(ot.sl)+'" title="Stop loss"></div>':'')+
-              '<div class="lm entry" style="left:'+pct(ot.entryPrice)+'" title="Entry"></div>'+
-              (ot.currentPrice?'<div class="lm cur" style="left:'+pct(ot.currentPrice)+'" title="Current price"></div>':'')+
-              (ot.tp?'<div class="lm tp" style="left:'+pct(ot.tp)+'" title="Take profit"></div>':'')+
-            '</div>'+
-            '<div class="ladder-labels">'+
-              '<span class="ll-sl">SL <b>$'+Number(ot.sl||0).toLocaleString()+'</b></span>'+
-              '<span class="ll-entry">Entry <b>$'+Number(ot.entryPrice||0).toLocaleString()+'</b></span>'+
-              '<span class="ll-cur">Now <b>$'+Number(ot.currentPrice||0).toLocaleString()+'</b></span>'+
-              '<span class="ll-tp">TP <b>$'+Number(ot.tp||0).toLocaleString()+'</b></span>'+
+    if(_lastGridMode !== 'split'){
+      _lastGridMode = 'split';
+      liveGrid.className='live-grid split';
+      liveGrid.innerHTML=
+        '<div class="live-col">'+
+          '<div class="panel">'+
+            '<div class="panel-head"><h2>Open Trade</h2><span class="meta" id="otTimeMeta">' + (ot.entryTime ? ('since '+fmtTime(ot.entryTime)) : '') + '</span></div>'+
+            '<div class="panel-body">'+
+              '<div class="ot-head"><span class="ot-dir '+(long?'long':'short')+'" id="otDirTag">'+(long?'▲ LONG':'▼ SHORT')+'</span>'+
+              '<span class="ot-unr '+(u>=0?'pos':'neg')+'" id="otUnrVal" style="color:'+(u>=0?'var(--green)':'var(--rust)')+'">'+fmtUsdSigned(u)+'</span></div>'+
+              '<div class="ladder" id="otLadder">'+
+                (ot.sl?'<div class="lm sl" style="left:'+pct(ot.sl)+'" title="Stop loss"></div>':'')+
+                '<div class="lm entry" style="left:'+pct(ot.entryPrice)+'" title="Entry"></div>'+
+                (ot.currentPrice?'<div class="lm cur" style="left:'+pct(ot.currentPrice)+'" title="Current price"></div>':'')+
+                (ot.tp?'<div class="lm tp" style="left:'+pct(ot.tp)+'" title="Take profit"></div>':'')+
+              '</div>'+
+              '<div class="ladder-labels" id="otLadderLabels">'+
+                '<span class="ll-sl">SL <b>$'+Number(ot.sl||0).toLocaleString()+'</b></span>'+
+                '<span class="ll-entry">Entry <b>$'+Number(ot.entryPrice||0).toLocaleString()+'</b></span>'+
+                '<span class="ll-cur">Now <b>$'+Number(ot.currentPrice||0).toLocaleString()+'</b></span>'+
+                '<span class="ll-tp">TP <b>$'+Number(ot.tp||0).toLocaleString()+'</b></span>'+
+              '</div>'+
             '</div>'+
           '</div>'+
         '</div>'+
-      '</div>'+
-      '<div class="live-col">'+
-        '<div class="panel">'+
-          '<div class="panel-head"><h2>Activity</h2><span class="meta">newest first</span></div>'+
-          '<div class="feed" id="feed">'+renderFeedHtml()+'</div>'+
-        '</div>'+
-      '</div>';
+        '<div class="live-col">'+
+          '<div class="panel">'+
+            '<div class="panel-head"><h2>Activity</h2><span class="meta">newest first</span></div>'+
+            '<div class="feed" id="feed">'+renderFeedHtml()+'</div>'+
+          '</div>'+
+        '</div>';
+    }else{
+      /* In-place update without nuking DOM */
+      const feedEl=document.getElementById('feed');
+      if(feedEl)feedEl.innerHTML=renderFeedHtml();
+      const otUnr=document.getElementById('otUnrVal');
+      if(otUnr){otUnr.textContent=fmtUsdSigned(u);otUnr.style.color=(u>=0?'var(--green)':'var(--rust)');}
+    }
   }else{
     dirEl.textContent='Flat';dirEl.className='t-value';
     dirSub.textContent='no open trade';
     unrEl.textContent='—';unrEl.className='t-value';
     unrSub.innerHTML='<svg width="24" height="6" viewBox="0 0 24 6" style="vertical-align:middle;opacity:0.4"><line x1="0" y1="3" x2="24" y2="3" stroke="currentColor" stroke-dasharray="3 3" stroke-width="2"/></svg>';
 
-    liveGrid.className='live-grid merged';
-    liveGrid.innerHTML=
-      '<div class="live-col">'+
-        '<div class="panel">'+
-          '<div class="panel-head"><h2>Status & Activity</h2><span class="meta">newest first</span></div>'+
-          '<div class="status-substrip"><span class="badge flat">FLAT</span> <span>No active position — bot is monitoring candle conditions</span></div>'+
-          '<div class="ekg-wrap" id="ekgWrap">'+
-            '<canvas id="ekgCanvas" aria-hidden="true"></canvas>'+
-            '<span class="ekg-label" id="ekgLabel">SCANNING ●</span>'+
-            '<div class="scan-overlay" id="scanOverlay">'+
-              '<span class="scan-text" id="scanText">SCANNING MARKET…</span>'+
+    if(_lastGridMode !== 'merged'){
+      _lastGridMode = 'merged';
+      liveGrid.className='live-grid merged';
+      liveGrid.innerHTML=
+        '<div class="live-col">'+
+          '<div class="panel">'+
+            '<div class="panel-head"><h2>Status & Activity</h2><span class="meta">newest first</span></div>'+
+            '<div class="status-substrip"><span class="badge flat">FLAT</span> <span>No active position — bot is monitoring candle conditions</span></div>'+
+            '<div class="ekg-wrap" id="ekgWrap">'+
+              '<canvas id="ekgCanvas" aria-hidden="true"></canvas>'+
+              '<span class="ekg-label" id="ekgLabel">SCANNING ●</span>'+
+              '<div class="scan-overlay" id="scanOverlay">'+
+                '<span class="scan-text" id="scanText">SCANNING MARKET…</span>'+
+              '</div>'+
+              '<div class="scan-line-h" id="scanLineH"></div>'+
             '</div>'+
-            '<div class="scan-line-h" id="scanLineH"></div>'+
+            '<div class="feed" id="feed">'+renderFeedHtml()+'</div>'+
           '</div>'+
-          '<div class="feed" id="feed">'+renderFeedHtml()+'</div>'+
-        '</div>'+
-      '</div>';
+        '</div>';
+    }else{
+      /* In-place update without nuking DOM */
+      const feedEl=document.getElementById('feed');
+      if(feedEl)feedEl.innerHTML=renderFeedHtml();
+    }
   }
   updateTradeChartLines(ot);
 }
@@ -1182,10 +1201,16 @@ function renderAnalytics(tr){
   }).join('');
 }
 
+let _lastChartTradeCount = null;
+
 /* ─── Render: Equity Chart (TASK 4: Flat Dotted Baseline at $0 when trades === 0) ─── */
 function renderChart(tr){
   const chartPanel=document.querySelector('.chart-panel');
   const emptyEl=document.getElementById('chartEmpty'),cv=document.getElementById('equityChart');
+
+  /* If trade count has not changed and chart exists, skip re-render to prevent blinking */
+  if(_lastChartTradeCount === tr.length && chart) return;
+  _lastChartTradeCount = tr.length;
 
   if(!tr.length){
     if(chartPanel){chartPanel.classList.add('empty');chartPanel.classList.remove('active-chart');}
