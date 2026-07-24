@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shiva Sniper — Live Bot Console</title>
+<title>Shiva Sniper v13 — Live Bot Console</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrainsMono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -44,6 +44,7 @@ body{font-family:var(--body);background:
 .masthead{display:flex;align-items:center;gap:14px;padding:12px 0 10px;border-bottom:3px solid var(--ink);margin-bottom:12px;flex-wrap:wrap}
 .brand{font-family:var(--disp);font-weight:700;font-size:1.3rem;letter-spacing:-0.01em;white-space:nowrap}
 .brand .tick{color:var(--green)}
+.brand .ver{font-family:var(--mono);font-size:0.68em;font-weight:700;letter-spacing:0.04em;color:var(--amber);margin-left:4px;vertical-align:middle;background:rgba(255,149,0,0.12);padding:2px 6px;border-radius:2px;border:1px solid rgba(255,149,0,0.3)}
 .mode-chip{font-family:var(--mono);font-size:0.64rem;font-weight:700;letter-spacing:0.08em;padding:4px 11px;border-radius:0px;border:2px solid var(--rule);color:var(--ink-2)}
 .mode-chip.paper{border-color:var(--amber);color:#fff;background:var(--amber)}
 .mode-chip.live-money{border-color:var(--green);color:#fff;background:var(--green)}
@@ -172,13 +173,150 @@ canvas#equityChart{width:100% !important;height:100% !important}
 @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(1.4)}}
 .market-chart-container{position:relative;width:100%;height:320px;background:var(--surface);overflow:hidden}
 
-.log-panel{margin-top:12px}
-table.blotter{width:100%;border-collapse:collapse;font-size:0.74rem;table-layout:fixed}
-table.blotter th{text-align:left;padding:9px 8px;font-family:var(--disp);font-weight:700;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.03em;color:#fff;background:var(--ink);cursor:pointer;user-select:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ═══════════ LIVE ANIMATIONS ═══════════ */
+
+/* Masthead particle canvas */
+.masthead{position:relative;overflow:hidden}
+#mastheadCanvas{position:absolute;inset:0;pointer-events:none;opacity:0.55;z-index:0}
+.masthead > *{position:relative;z-index:1}
+
+/* Brand v13 neon pulse */
+.brand .ver{
+  animation:verGlow 2.8s ease-in-out infinite;
+}
+@keyframes verGlow{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,149,0,0);color:var(--amber)}
+  50%{box-shadow:0 0 12px 3px rgba(255,149,0,0.45);color:#ffbb38}
+}
+
+/* Bot-state dot enhanced glow */
+.bot-state.running .dot{
+  animation:dotRunPulse 1.8s ease-in-out infinite;
+}
+@keyframes dotRunPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(0,179,104,0.7);transform:scale(1)}
+  50%{box-shadow:0 0 0 9px rgba(0,179,104,0);transform:scale(1.15)}
+}
+
+/* Live ticker strip */
+.ticker-strip{
+  background:var(--ink);
+  color:rgba(255,255,255,0.85);
+  font-family:var(--mono);
+  font-size:0.66rem;
+  font-weight:600;
+  letter-spacing:0.04em;
+  padding:4px 0;
+  overflow:hidden;
+  white-space:nowrap;
+  position:relative;
+  border-bottom:2px solid var(--green);
+  margin-bottom:12px;
+}
+.ticker-inner{
+  display:inline-block;
+  animation:tickerScroll 28s linear infinite;
+  will-change:transform;
+}
+@keyframes tickerScroll{
+  0%{transform:translateX(0)}
+  100%{transform:translateX(-50%)}
+}
+.ticker-item{display:inline-block;padding:0 28px}
+.ticker-item .tk-label{color:rgba(255,255,255,0.45);margin-right:5px}
+.ticker-item .tk-val{color:#fff}
+.ticker-item .tk-pos{color:var(--green)}
+.ticker-item .tk-neg{color:var(--rust)}
+.ticker-sep{display:inline-block;color:rgba(255,255,255,0.18);padding:0 6px}
+
+/* EKG heartbeat canvas in Activity panel */
+.ekg-wrap{
+  position:relative;
+  height:52px;
+  overflow:hidden;
+  border-bottom:1px solid var(--rule-soft);
+  background:linear-gradient(180deg,rgba(0,179,104,0.03) 0%,transparent 100%);
+}
+#ekgCanvas{
+  width:100%;
+  height:52px;
+  display:block;
+}
+.ekg-label{
+  position:absolute;
+  top:4px;
+  right:10px;
+  font-family:var(--mono);
+  font-size:0.58rem;
+  font-weight:700;
+  color:var(--green);
+  letter-spacing:0.08em;
+  opacity:0.7;
+  animation:ekgLabelBlink 2s ease-in-out infinite;
+}
+@keyframes ekgLabelBlink{
+  0%,100%{opacity:0.7}50%{opacity:0.3}
+}
+
+/* Panel scan-line shimmer */
+.panel{
+  position:relative;
+  overflow:hidden;
+}
+.panel::after{
+  content:'';
+  position:absolute;
+  top:-100%;
+  left:0;
+  right:0;
+  height:40%;
+  background:linear-gradient(180deg,transparent 0%,rgba(46,134,222,0.04) 50%,transparent 100%);
+  pointer-events:none;
+  animation:scanLine 6s ease-in-out infinite;
+  z-index:0;
+}
+@keyframes scanLine{
+  0%{top:-40%}100%{top:110%}
+}
+
+/* Status flat-badge pulse */
+.badge.flat{
+  animation:flatPulse 3s ease-in-out infinite;
+}
+@keyframes flatPulse{
+  0%,100%{opacity:1}50%{opacity:0.55}
+}
+
+/* Panel head live-dot indicator */
+.live-dot-anim{
+  display:inline-block;
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--green);
+  margin-right:6px;
+  vertical-align:middle;
+  animation:liveDotBeat 1.4s ease-in-out infinite;
+}
+@keyframes liveDotBeat{
+  0%,100%{transform:scale(1);opacity:1}
+  50%{transform:scale(1.5);opacity:0.4}
+}
+
+/* Reduced-motion overrides */
+@media(prefers-reduced-motion:reduce){
+  .brand .ver,.bot-state.running .dot,.ticker-inner,#ekgCanvas,.panel::after,.badge.flat,.live-dot-anim{
+    animation:none
+  }
+}
+
+.log-panel{margin-top:12px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.blotter{width:100%;min-width:1100px;border-collapse:collapse;font-size:0.76rem;table-layout:auto}
+table.blotter th{text-align:left;padding:10px 10px;font-family:var(--disp);font-weight:700;font-size:0.62rem;text-transform:uppercase;letter-spacing:0.03em;color:#fff;background:var(--ink);cursor:pointer;user-select:none;white-space:nowrap;overflow:visible}
 table.blotter th:hover{color:var(--amber)}
 table.blotter th .arr{opacity:0.4}
 table.blotter th.sort-asc .arr,table.blotter th.sort-desc .arr{opacity:1;color:var(--amber)}
-table.blotter td{padding:8px;border-bottom:2px solid var(--rule-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+table.blotter td{padding:9px 10px;border-bottom:2px solid var(--rule-soft);white-space:nowrap;overflow:visible;font-weight:600}
 table.blotter tbody tr:nth-child(even) td{background:rgba(14,22,38,0.02)}
 table.blotter tbody tr:hover td{background:var(--green-soft)}
 .num{font-family:var(--mono);text-align:right;font-weight:700}
@@ -256,10 +394,46 @@ table.monthly .mbar-col{width:26%}
 
   <!-- MASTHEAD -->
   <header class="masthead">
-    <div class="brand">SHIVA<span class="tick">/</span>SNIPER</div>
+    <canvas id="mastheadCanvas" aria-hidden="true"></canvas>
+    <div class="brand">SHIVA<span class="tick">/</span>SNIPER <span class="ver">v13</span></div>
     <span class="mode-chip" id="modeChip">—</span>
     <div class="bot-state" id="botState"><span class="dot"></span><span id="botStateText">Connecting…</span><span class="age" id="botStateAge"></span></div>
   </header>
+
+  <!-- LIVE TICKER STRIP -->
+  <div class="ticker-strip" id="tickerStrip" aria-hidden="true">
+    <div class="ticker-inner" id="tickerInner">
+      <span class="ticker-item"><span class="tk-label">BTC/USD</span><span class="tk-val" id="tkBtcPrice">$--</span></span>
+      <span class="ticker-sep">◆</span>
+      <span class="ticker-item"><span class="tk-label">NET P&amp;L</span><span class="tk-val" id="tkNetPnl">$0.00</span></span>
+      <span class="ticker-sep">◆</span>
+      <span class="ticker-item"><span class="tk-label">BOT</span><span class="tk-val" id="tkBotStatus">WAITING</span></span>
+      <span class="ticker-sep">◆</span>
+      <span class="ticker-item"><span class="tk-label">TRADES</span><span class="tk-val" id="tkTrades">0</span></span>
+      <span class="ticker-sep">◆</span>
+      <span class="ticker-item"><span class="tk-label">WIN RATE</span><span class="tk-val" id="tkWinRate">—</span></span>
+      <span class="ticker-sep">◆</span>
+      <span class="ticker-item"><span class="tk-label">POSITION</span><span class="tk-val" id="tkPosition">FLAT</span></span>
+      <span class="ticker-sep">◆</span>
+      <span class="ticker-item"><span class="tk-label">TIMEFRAME</span><span class="tk-val" id="tkTf">30m</span></span>
+      <span class="ticker-sep">◆</span>
+      <!-- duplicate for seamless loop -->
+      <span class="ticker-item"><span class="tk-label">BTC/USD</span><span class="tk-val" id="tkBtcPrice2">$--</span></span>
+      <span class="ticker-sep">◆</span>
+      <span class="ticker-item"><span class="tk-label">NET P&amp;L</span><span class="tk-val" id="tkNetPnl2">$0.00</span></span>
+      <span class="ticker-sep">◆</span>
+      <span class="ticker-item"><span class="tk-label">BOT</span><span class="tk-val" id="tkBotStatus2">WAITING</span></span>
+      <span class="ticker-sep">◆</span>
+      <span class="ticker-item"><span class="tk-label">TRADES</span><span class="tk-val" id="tkTrades2">0</span></span>
+      <span class="ticker-sep">◆</span>
+      <span class="ticker-item"><span class="tk-label">WIN RATE</span><span class="tk-val" id="tkWinRate2">—</span></span>
+      <span class="ticker-sep">◆</span>
+      <span class="ticker-item"><span class="tk-label">POSITION</span><span class="tk-val" id="tkPosition2">FLAT</span></span>
+      <span class="ticker-sep">◆</span>
+      <span class="ticker-item"><span class="tk-label">TIMEFRAME</span><span class="tk-val" id="tkTf2">30m</span></span>
+      <span class="ticker-sep">◆</span>
+    </div>
+  </div>
 
   <!-- TABS (Full-width thumb buttons on mobile) -->
   <nav class="tabs" role="tablist">
@@ -321,7 +495,12 @@ table.monthly .mbar-col{width:26%}
       </div>
       <div class="live-col">
         <div class="panel">
-          <div class="panel-head"><h2>Activity</h2><span class="meta">newest first</span></div>
+          <div class="panel-head"><h2><span class="live-dot-anim" aria-hidden="true"></span>Activity</h2><span class="meta">newest first</span></div>
+          <!-- EKG heartbeat animation -->
+          <div class="ekg-wrap">
+            <canvas id="ekgCanvas" aria-hidden="true"></canvas>
+            <span class="ekg-label">LIVE ●</span>
+          </div>
           <div class="feed" id="feed"><div class="feed-empty">Bot events appear here as they happen — cycle steps, entries, and exits.</div></div>
         </div>
       </div>
@@ -388,12 +567,13 @@ table.monthly .mbar-col{width:26%}
     <div class="panel log-panel">
       <div class="panel-head"><h2>Trade Blotter</h2><span class="meta" id="blotterMeta"></span></div>
       <table class="blotter" id="blotter"><thead><tr>
-          <th data-sort="entryTime" class="sort-desc">Entry Time (IST) <span class="arr">▼</span></th>
+          <th data-sort="entryTime" class="sort-desc">Date <span class="arr">▼</span></th>
+          <th data-sort="entryTime">Entry Time (IST) <span class="arr">▼</span></th>
+          <th data-sort="entryPrice" class="num">Entry Point <span class="arr">▼</span></th>
           <th data-sort="exitTime">Exit Time (IST) <span class="arr">▼</span></th>
+          <th data-sort="exitPrice" class="num">Exit Point <span class="arr">▼</span></th>
           <th data-sort="direction">Dir <span class="arr">▼</span></th>
           <th data-sort="qty" class="num">Qty (Lots) <span class="arr">▼</span></th>
-          <th data-sort="entryPrice" class="num">Entry Price <span class="arr">▼</span></th>
-          <th data-sort="exitPrice" class="num">Exit Price <span class="arr">▼</span></th>
           <th data-sort="pointsCaptured" class="num">Points <span class="arr">▼</span></th>
           <th data-sort="exitReason">Exit Reason <span class="arr">▼</span></th>
           <th data-sort="grossPnl" class="num">Gross P&L <span class="arr">▼</span></th>
@@ -432,6 +612,8 @@ function enrich(t){
 
 /* ─── Formatters ─── */
 const fmtTime=ts=>{if(!ts)return'—';const d=new Date(ts),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes())};
+const fmtDateOnly=ts=>{if(!ts)return'—';const d=new Date(ts),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())};
+const fmtTimeOnly=ts=>{if(!ts)return'—';const d=new Date(ts),p=n=>String(n).padStart(2,'0');return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())};
 const fmtClock=ts=>{const d=new Date(ts),p=n=>String(n).padStart(2,'0');return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())};
 const fmtHold=ms=>{if(!ms||ms<0)return'—';const m=Math.floor(ms/6e4);return m>=60?Math.floor(m/60)+'h '+(m%60)+'m':m+'m '+Math.floor(ms/1e3%60)+'s'};
 const fmtUsd=v=>{if(v==null||isNaN(v))return'$0.00';return(v<0?'−$':'$')+Math.abs(v).toFixed(2)};
@@ -720,18 +902,19 @@ function renderLog(){
     const w=t.netPnl>=0,hold=t.exitTime-t.entryTime;
     const qtyLots = t.qty ? t.qty : 100;
     return'<tr>'+
-      '<td style="white-space:nowrap;font-family:var(--mono);font-size:0.82rem;">'+fmtTime(t.entryTime)+'</td>'+
-      '<td style="white-space:nowrap;font-family:var(--mono);font-size:0.82rem;">'+fmtTime(t.exitTime)+'</td>'+
+      '<td style="white-space:nowrap;font-family:var(--mono);font-size:0.82rem;font-weight:700;color:var(--ink-2);">'+fmtDateOnly(t.entryTime)+'</td>'+
+      '<td style="white-space:nowrap;font-family:var(--mono);font-size:0.82rem;">'+fmtTimeOnly(t.entryTime)+'</td>'+
+      '<td class="num" style="font-family:var(--mono);">$'+Number(t.entryPrice||0).toLocaleString()+'</td>'+
+      '<td style="white-space:nowrap;font-family:var(--mono);font-size:0.82rem;">'+fmtTimeOnly(t.exitTime)+'</td>'+
+      '<td class="num" style="font-family:var(--mono);">$'+Number(t.exitPrice||0).toLocaleString()+'</td>'+
       '<td><span class="dir-mark '+t.direction+'">'+(t.direction==='long'?'▲ L':'▼ S')+'</span></td>'+
       '<td class="num" style="font-family:var(--mono);"><b>'+qtyLots+'</b> <span style="font-size:0.7rem;color:var(--ink-3)">lots</span></td>'+
-      '<td class="num">$'+Number(t.entryPrice||0).toLocaleString()+'</td>'+
-      '<td class="num">$'+Number(t.exitPrice||0).toLocaleString()+'</td>'+
       '<td class="num '+(t.pointsCaptured>=0?'pos':'neg')+'">'+t.pointsCaptured.toFixed(0)+'</td>'+
       '<td><span class="badge '+(w?'win':'loss')+'">'+(t.exitReason||'—')+'</span>'+(t.scalperApplied?' <span class="badge scalp">scalp</span>':'')+'</td>'+
       '<td class="num '+(t.grossPnl>=0?'pos':'neg')+'">'+fmtUsdSigned(t.grossPnl)+'</td>'+
       '<td class="num">'+fmtUsd(t.totalCommission)+'</td>'+
       '<td class="num '+(w?'pos':'neg')+'"><b>'+fmtUsdSigned(t.netPnl)+'</b></td>'+
-      '<td>'+fmtHold(hold)+'</td></tr>';
+      '<td style="white-space:nowrap;">'+fmtHold(hold)+'</td></tr>';
   }).join('');
 
   renderChart(tr);
@@ -1040,6 +1223,184 @@ initLiveChart();
 poll();
 setInterval(poll,2000);
 setInterval(fetchLiveCandles,10000);
+
+/* ─── Masthead Particle Canvas ─── */
+(function(){
+  const c=document.getElementById('mastheadCanvas');
+  if(!c)return;
+  const mh=document.querySelector('.masthead');
+  const ctx=c.getContext('2d');
+  let W,H,pts=[];
+  function resize(){
+    W=c.width=mh.offsetWidth;
+    H=c.height=mh.offsetHeight;
+    if(!pts.length||pts.length<30){
+      pts=[];
+      for(let i=0;i<32;i++)pts.push({
+        x:Math.random()*W,y:Math.random()*H,
+        vx:(Math.random()-0.5)*0.35,vy:(Math.random()-0.5)*0.25,
+        r:Math.random()*2+0.8,
+        a:Math.random()
+      });
+    }
+  }
+  resize();
+  window.addEventListener('resize',resize);
+  const COLS=['rgba(46,134,222,','rgba(124,92,224,','rgba(0,179,104,','rgba(255,149,0,'];
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    pts.forEach((p,i)=>{
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0)p.x=W;if(p.x>W)p.x=0;
+      if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+      p.a+=0.008;if(p.a>1)p.a-=1;
+      const alpha=(0.3+0.4*Math.abs(Math.sin(p.a*Math.PI*2)));
+      const col=COLS[i%COLS.length];
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=col+alpha.toFixed(2)+')';
+      ctx.fill();
+      /* draw lines to nearest neighbours */
+      pts.forEach((q,j)=>{
+        if(j<=i)return;
+        const dx=p.x-q.x,dy=p.y-q.y,d=Math.sqrt(dx*dx+dy*dy);
+        if(d<90){
+          ctx.beginPath();
+          ctx.moveTo(p.x,p.y);
+          ctx.lineTo(q.x,q.y);
+          ctx.strokeStyle=col+(0.12*(1-d/90)).toFixed(3)+')';
+          ctx.lineWidth=0.6;
+          ctx.stroke();
+        }
+      });
+    });
+    requestAnimationFrame(frame);
+  }
+  if(!window.matchMedia('(prefers-reduced-motion:reduce)').matches) frame();
+})();
+
+/* ─── EKG Heartbeat Canvas ─── */
+(function(){
+  const c=document.getElementById('ekgCanvas');
+  if(!c)return;
+  const ctx=c.getContext('2d');
+  let W,H,offset=0;
+  function resize(){
+    const wrap=c.parentElement;
+    W=c.width=wrap.offsetWidth||400;
+    H=c.height=52;
+  }
+  resize();
+  window.addEventListener('resize',resize);
+
+  /* Build one EKG cycle in normalised [0,1] x [0,1] coords */
+  const CYCLE=[
+    [0,0.5],[0.12,0.5],[0.15,0.42],[0.18,0.5],
+    [0.20,0.5],
+    [0.22,0.5],[0.24,0.15],[0.265,0.92],[0.29,0.3],[0.31,0.5],
+    [0.36,0.5],[0.38,0.38],[0.42,0.62],[0.46,0.5],
+    [1.0,0.5]
+  ];
+
+  function sampleEkg(t){
+    /* t in [0,1], returns y in [0,1] */
+    const seg=CYCLE;
+    for(let i=0;i<seg.length-1;i++){
+      const [x0,y0]=seg[i],[x1,y1]=seg[i+1];
+      if(t>=x0&&t<=x1){
+        const frac=(t-x0)/(x1-x0);
+        return y0+(y1-y0)*frac;
+      }
+    }
+    return 0.5;
+  }
+
+  const SPEED=0.6; /* pixels per frame */
+  const TRAIL=180; /* px of visible trail */
+
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    /* Background subtle glow */
+    const grd=ctx.createLinearGradient(0,0,0,H);
+    grd.addColorStop(0,'rgba(0,179,104,0.03)');
+    grd.addColorStop(1,'transparent');
+    ctx.fillStyle=grd;
+    ctx.fillRect(0,0,W,H);
+
+    /* Grid lines */
+    ctx.strokeStyle='rgba(0,179,104,0.07)';
+    ctx.lineWidth=1;
+    for(let x=0;x<W;x+=40){
+      ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();
+    }
+    ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();
+
+    /* EKG line */
+    const cycleW=W*0.55; /* one full cycle width in px */
+    ctx.beginPath();
+    let started=false;
+    for(let px=0;px<W;px++){
+      /* age: distance from leading edge (offset px) */
+      const age=(offset-px+W*10)%W;
+      if(age>TRAIL)continue;
+      const t=((px-offset+W*10)%cycleW)/cycleW;
+      const y=sampleEkg(((px+offset)%cycleW)/cycleW)*(H-12)+6;
+      const alpha=Math.max(0,1-age/TRAIL);
+      if(!started){ctx.moveTo(px,y);started=true;}else{ctx.lineTo(px,y);}
+    }
+    /* Gradient stroke */
+    const lineGrd=ctx.createLinearGradient(Math.max(0,offset-TRAIL),0,offset,0);
+    lineGrd.addColorStop(0,'rgba(0,179,104,0)');
+    lineGrd.addColorStop(0.7,'rgba(0,179,104,0.6)');
+    lineGrd.addColorStop(1,'rgba(0,179,104,1)');
+    ctx.strokeStyle=lineGrd;
+    ctx.lineWidth=2;
+    ctx.shadowColor='rgba(0,179,104,0.7)';
+    ctx.shadowBlur=6;
+    ctx.stroke();
+    ctx.shadowBlur=0;
+
+    /* Leading dot */
+    const leadT=((offset)%cycleW)/cycleW;
+    const leadY=sampleEkg(leadT)*(H-12)+6;
+    ctx.beginPath();
+    ctx.arc(offset%W,leadY,3.5,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,179,104,1)';
+    ctx.shadowColor='rgba(0,179,104,0.9)';
+    ctx.shadowBlur=10;
+    ctx.fill();
+    ctx.shadowBlur=0;
+
+    offset=(offset+SPEED)%(W);
+    requestAnimationFrame(frame);
+  }
+  if(!window.matchMedia('(prefers-reduced-motion:reduce)').matches) frame();
+})();
+
+/* ─── Ticker Updater ─── */
+function updateTicker(){
+  const b=st.botStatus,ot=st.openTrade,tr=st.trades;
+  const net=tr.reduce((s,t)=>s+t.netPnl,0);
+  const wins=tr.filter(t=>t.netPnl>0).length;
+  const wr=tr.length?((wins/tr.length)*100).toFixed(1)+'%':'—';
+  const pos=ot?(ot.direction==='long'?'▲ LONG':'▼ SHORT'):'FLAT';
+  const btcEl=document.getElementById('livePriceBadge');
+  const btcTxt=btcEl?btcEl.textContent.replace('●','').trim():'$--';
+  const status=b?String(b.status||'waiting').toUpperCase():'WAITING';
+  const tf=b&&b.timeframe?b.timeframe:'30m';
+  ['','2'].forEach(sfx=>{
+    const set=(id,v)=>{const e=document.getElementById(id+sfx);if(e)e.textContent=v;};
+    const setCls=(id,v,cls)=>{const e=document.getElementById(id+sfx);if(e){e.textContent=v;e.className='tk-val '+cls;}};
+    set('tkBtcPrice',btcTxt);
+    setCls('tkNetPnl',fmtUsdSigned(net),net>=0?'tk-pos':'tk-neg');
+    set('tkBotStatus',status);
+    set('tkTrades',tr.length);
+    set('tkWinRate',wr);
+    set('tkPosition',pos);
+    set('tkTf',tf);
+  });
+}
+setInterval(updateTicker,2500);
 </script>
 </body>
 </html>

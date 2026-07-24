@@ -71,3 +71,71 @@ def compute_pnl_usd(entry: float, exit_price: float, qty_lots: int,
 def compute_points(entry: float, exit_price: float, is_long: bool) -> float:
     """Raw price points captured (positive = profit, negative = loss)."""
     return round((exit_price - entry) if is_long else (entry - exit_price), 2)
+
+
+FEE_TAKER         = 0.0005
+FEE_MAKER         = 0.0002
+GST               = 0.18
+SCALP_HOLD_WINDOW = 1800  # 30 minutes in seconds
+
+
+def compute_trade_fees(
+    entry_price  : float,
+    exit_price   : float,
+    qty_lots     : int,
+    hold_seconds : float = 0,
+    fee_type     : str   = "taker",
+) -> dict:
+    """
+    Delta India commission fees + 18% GST + scalper fee waiver under 30 minutes.
+
+    Contract spec: 1 lot = BTC_PER_LOT (0.001 BTC) face value.
+    Fee = price × qty × BTC_PER_LOT × rate × (1 + GST)
+    Scalper waiver: exit fee = 0 when hold time ≤ 30 minutes.
+    """
+    rate      = FEE_MAKER if fee_type == "maker" else FEE_TAKER
+    cs        = BTC_PER_LOT                       # always 0.001 — canonical per-lot size
+    entry_fee = entry_price * qty_lots * cs * rate * (1 + GST)
+
+    scalper  = hold_seconds is not None and hold_seconds <= SCALP_HOLD_WINDOW
+    exit_fee = 0.0 if scalper else (exit_price * qty_lots * cs * rate * (1 + GST))
+
+    total = entry_fee + exit_fee
+    return {
+        "entry"  : round(entry_fee, 4),
+        "exit"   : round(exit_fee, 4),
+        "total"  : round(total, 4),
+        "scalper": scalper,
+    }
+
+
+def compute_trade_pnl(
+    entry_price  : float,
+    exit_price   : float,
+    qty_lots     : int,
+    is_long      : bool,
+    hold_seconds : float = 0,
+    fee_type     : str   = "taker",
+) -> dict:
+    """
+    Complete P&L breakdown (verified formula from Delta CSV log):
+
+        Gross (USD) = points × qty_lots × BTC_PER_LOT   (= points × qty × 0.001)
+        Fees  (USD) = price  × qty_lots × BTC_PER_LOT × rate × (1+GST)
+        Net         = Gross − Fees
+
+    100 lots × 0.001 BTC/lot = 0.1 BTC total position
+    """
+    points    = compute_points(entry_price, exit_price, is_long)
+    cs        = BTC_PER_LOT                       # 0.001 — DO NOT substitute total BTC position
+    gross     = points * qty_lots * cs
+    fees_info = compute_trade_fees(entry_price, exit_price, qty_lots, hold_seconds, fee_type)
+    net       = gross - fees_info["total"]
+    return {
+        "points" : points,
+        "gross"  : round(gross, 4),
+        "fees"   : round(fees_info["total"], 4),
+        "net"    : round(net, 4),
+        "scalper": fees_info["scalper"],
+    }
+

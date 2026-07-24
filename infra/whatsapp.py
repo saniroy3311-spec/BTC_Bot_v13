@@ -78,7 +78,7 @@ try:
 except ImportError:
     WHATSAPP_TEMPLATE_LANG = "en"
 
-from risk.lot_sizing import compute_points, lots_to_btc
+from risk.lot_sizing import compute_points, lots_to_btc, compute_trade_pnl
 
 logger        = logging.getLogger(__name__)
 IST           = timezone(timedelta(hours=5, minutes=30))
@@ -291,20 +291,32 @@ class WhatsApp:
 
     async def notify_exit(
         self,
-        reason      : str,
-        entry_price : float,
-        exit_price  : float,
-        real_pl     : float,
-        is_long     : bool = True,
-        qty         : int  = None,
+        reason       : str,
+        entry_price  : float,
+        exit_price   : float,
+        real_pl      : float = None,
+        is_long      : bool  = True,
+        qty          : int   = None,
+        entry_time   : float = None,
+        exit_time    : float = None,
     ) -> None:
         side     = "LONG" if is_long else "SHORT"
-        points   = compute_points(entry_price, exit_price, is_long)
-        gross    = points * (qty or 1) * 0.001
-        emoji    = "💰" if gross  >= 0 else "🔻"
+        qty_val  = qty if qty else 100
+        hold_s   = ((exit_time - entry_time) / 1000.0) if (entry_time and exit_time) else 0
+
+        pnl_info = compute_trade_pnl(entry_price, exit_price, qty_val, is_long, hold_s)
+        points   = pnl_info["points"]
+        gross    = pnl_info["gross"]
+        fees     = pnl_info["fees"]
+        net      = pnl_info["net"]
+        scalper  = pnl_info["scalper"]
+
+        emoji    = "💰" if net >= 0 else "🔻"
         pts_sign = "+" if points >= 0 else ""
-        grs_sign = "+" if gross  >= 0 else ""
-        qty_str  = f"  |  `{qty}` lot{'s' if qty != 1 else ''}" if qty else ""
+        grs_sign = "+" if gross >= 0 else ""
+        net_sign = "+" if net >= 0 else ""
+        qty_str  = f"  |  `{qty_val}` lot{'s' if qty_val != 1 else ''}"
+        fee_note = " (scalp fee waiver)" if scalper else ""
 
         await self._send(
             f"{emoji} *EXIT — {side}*{qty_str}\n"
@@ -312,7 +324,9 @@ class WhatsApp:
             f"Entry         : `${entry_price:,.2f}`\n"
             f"Exit          : *${exit_price:,.2f}*\n"
             f"Points        : `{pts_sign}{points:.2f}`\n"
-            f"*Gross P&L : {grs_sign}${gross:.4f} USD*\n"
+            f"Gross P&L     : `{grs_sign}${gross:,.2f} USD`\n"
+            f"Fees          : `${fees:,.2f} USD`{fee_note}\n"
+            f"*Net P&L      : {net_sign}${net:,.2f} USD*\n"
             f"Reason        : `{reason}`"
         )
 

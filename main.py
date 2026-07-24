@@ -66,7 +66,7 @@ from infra.telegram_controller import TelegramController, EngineState
 from infra.whatsapp            import WhatsApp
 # from infra.whatsapp_controller import WhatsAppController  # disabled
 from infra.journal             import Journal
-from risk.lot_sizing           import btc_to_lots
+from risk.lot_sizing           import btc_to_lots, BTC_PER_LOT
 import server as _dashboard
 import dashboard_push as _push
 import threading as _threading
@@ -733,7 +733,7 @@ class BTCBotV13:
                     entry_time    = _entry_ms,
                     exit_time     = int(time.time() * 1000),
                     qty           = self._qty_lots,
-                    contract_size = POSITION_BTC_SIZE,
+                    contract_size = BTC_PER_LOT,   # 0.001 BTC per lot (canonical)
                     exit_reason   = reason,
                 )
                 _push.push_workflow_step(6)  # Log Trade
@@ -741,6 +741,7 @@ class BTCBotV13:
             logger.warning(f"[DASH-PUSH] push_trade failed: {_pe}")
 
         try:
+            _exit_ms = int(time.time() * 1000)
             await self._telegram.notify_exit(
                 reason      = reason,
                 entry_price = risk.entry_price if risk else 0.0,
@@ -748,6 +749,8 @@ class BTCBotV13:
                 real_pl     = pl,
                 is_long     = risk.is_long if risk else True,
                 qty         = self._qty_lots,
+                entry_time  = _entry_ms,
+                exit_time   = _exit_ms,
             )
         except Exception:
             pass

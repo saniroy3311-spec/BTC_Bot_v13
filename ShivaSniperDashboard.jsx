@@ -63,6 +63,18 @@ const fmtTime = (ts) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
+const fmtDateOnly = (ts) => {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const fmtTimeOnly = (ts) => {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+};
+
 const fmtHold = (ms) => {
   if (!ms) return '—';
   const s = Math.floor(ms / 1000);
@@ -387,10 +399,11 @@ function TradeLogPage({ trades }) {
   ];
 
   const cols = [
-    { key: 'entryTime', label: 'Entry' },
-    { key: 'entryPrice', label: 'Entry $' },
-    { key: 'exitTime', label: 'Exit' },
-    { key: 'exitPrice', label: 'Exit $' },
+    { key: 'entryTime', label: 'Date' },
+    { key: '_entryTimeOnly', label: 'Entry Time' },
+    { key: 'entryPrice', label: 'Entry Point' },
+    { key: '_exitTimeOnly', label: 'Exit Time' },
+    { key: 'exitPrice', label: 'Exit Point' },
     { key: 'direction', label: 'Dir' },
     { key: 'pointsCaptured', label: 'Pts' },
     { key: 'exitReason', label: 'Exit' },
@@ -418,9 +431,9 @@ function TradeLogPage({ trades }) {
         <table className="w-full text-[0.68rem] border-collapse">
           <thead>
             <tr>
-              {cols.map((c) => (
+              {cols.map((c, i) => (
                 <th
-                  key={c.key}
+                  key={c.key + i}
                   onClick={c.key[0] !== '_' ? () => handleSort(c.key) : undefined}
                   className={`text-left px-2 py-1.5 font-semibold text-[0.6rem] uppercase tracking-wider text-[rgba(31,42,36,0.55)] border-b-2 border-[rgba(31,42,36,0.12)] whitespace-nowrap ${c.key[0] !== '_' ? 'cursor-pointer hover:text-[#2D6A4F]' : ''} ${sortKey === c.key ? 'text-[#2D6A4F]' : ''}`}
                 >
@@ -433,9 +446,10 @@ function TradeLogPage({ trades }) {
           <tbody>
             {sorted.map((t) => (
               <tr key={t.id} className="hover:bg-[rgba(45,106,79,0.04)]">
-                <td className="px-2 py-1.5 whitespace-nowrap">{fmtTime(t.entryTime)}</td>
+                <td className="px-2 py-1.5 whitespace-nowrap font-mono font-bold text-[#1F2A24]">{fmtDateOnly(t.entryTime)}</td>
+                <td className="px-2 py-1.5 whitespace-nowrap font-mono">{fmtTimeOnly(t.entryTime)}</td>
                 <td className="px-2 py-1.5 text-right font-mono">${(t.entryPrice || 0).toLocaleString()}</td>
-                <td className="px-2 py-1.5 whitespace-nowrap">{fmtTime(t.exitTime)}</td>
+                <td className="px-2 py-1.5 whitespace-nowrap font-mono">{fmtTimeOnly(t.exitTime)}</td>
                 <td className="px-2 py-1.5 text-right font-mono">${(t.exitPrice || 0).toLocaleString()}</td>
                 <td className="px-2 py-1.5">{t.direction === 'long' ? 'L' : 'S'}</td>
                 <td className={`px-2 py-1.5 text-right font-mono ${(t.pointsCaptured || 0) >= 0 ? 'text-[#3A7D44]' : 'text-[#B8863B]'}`}>{t.pointsCaptured.toFixed(0)}</td>
@@ -448,7 +462,7 @@ function TradeLogPage({ trades }) {
                 <td className="px-2 py-1.5 text-right font-mono">{fmtUsd(t.totalCommission)}</td>
                 <td className={`px-2 py-1.5 text-right font-mono font-semibold ${t.netPnl >= 0 ? 'text-[#3A7D44]' : 'text-[#B8863B]'}`}>{fmtUsd(t.netPnl)}</td>
                 <td className="px-2 py-1.5">{t.scalperApplied ? <span className="text-[0.55rem] font-semibold text-[#E07A3E] border border-[#E07A3E] px-1">Scalper ✓</span> : '—'}</td>
-                <td className="px-2 py-1.5 font-mono">{fmtHold(t.exitTime - t.entryTime)}</td>
+                <td className="px-2 py-1.5 font-mono whitespace-nowrap">{fmtHold(t.exitTime - t.entryTime)}</td>
               </tr>
             ))}
           </tbody>

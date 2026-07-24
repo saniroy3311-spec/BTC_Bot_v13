@@ -21,7 +21,7 @@ from datetime import datetime, timezone, timedelta
 
 import aiohttp
 from config          import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, PAPER_TRADING
-from risk.lot_sizing import compute_points, lots_to_btc
+from risk.lot_sizing import compute_points, lots_to_btc, compute_trade_pnl
 
 logger        = logging.getLogger(__name__)
 IST           = timezone(timedelta(hours=5, minutes=30))
@@ -140,20 +140,32 @@ class Telegram:
 
     async def notify_exit(
         self,
-        reason      : str,
-        entry_price : float,
-        exit_price  : float,
-        real_pl     : float,        # kept for back-compat; ignored — gross shown
-        is_long     : bool = True,
-        qty         : int  = None,
+        reason       : str,
+        entry_price  : float,
+        exit_price   : float,
+        real_pl      : float = None,
+        is_long      : bool  = True,
+        qty          : int   = None,
+        entry_time   : float = None,
+        exit_time    : float = None,
     ) -> None:
         side     = "LONG" if is_long else "SHORT"
-        points   = compute_points(entry_price, exit_price, is_long)
-        gross    = points * (qty or 1) * 0.001   # Delta inverse-perp formula
-        emoji    = "🏆" if gross  >= 0 else "💔"
+        qty_val  = qty if qty else 100
+        hold_s   = ((exit_time - entry_time) / 1000.0) if (entry_time and exit_time) else 0
+
+        pnl_info = compute_trade_pnl(entry_price, exit_price, qty_val, is_long, hold_s)
+        points   = pnl_info["points"]
+        gross    = pnl_info["gross"]
+        fees     = pnl_info["fees"]
+        net      = pnl_info["net"]
+        scalper  = pnl_info["scalper"]
+
+        emoji    = "🏆" if net >= 0 else "💔"
         pts_sign = "+" if points >= 0 else ""
-        grs_sign = "+" if gross  >= 0 else ""
-        qty_str  = f"  |  <code>{qty}</code> lot{'s' if qty != 1 else ''}" if qty else ""
+        grs_sign = "+" if gross >= 0 else ""
+        net_sign = "+" if net >= 0 else ""
+        qty_str  = f"  |  <code>{qty_val}</code> lot{'s' if qty_val != 1 else ''}"
+        fee_note = " (scalp fee waiver applied)" if scalper else ""
 
         await self._send(
             f"{emoji} <b>EXIT — {side}</b>{qty_str}  [{MODE_TAG}]\n"
@@ -161,7 +173,9 @@ class Telegram:
             f"📥 Entry         : <code>${entry_price:,.2f}</code>\n"
             f"📤 Exit          : <b>${exit_price:,.2f}</b>\n"
             f"📊 Points        : <code>{pts_sign}{points:.2f}</code>\n"
-            f"<b>💲 Gross P&amp;L : {grs_sign}${gross:.4f} USD</b>\n"
+            f"💲 Gross P&amp;L : <code>{grs_sign}${gross:,.2f} USD</code>\n"
+            f"💸 Fees          : <code>${fees:,.2f} USD</code>{fee_note}\n"
+            f"<b>💰 Net P&amp;L  : {net_sign}${net:,.2f} USD</b>\n"
             f"🔖 Reason        : <code>{reason}</code>"
         )
 
