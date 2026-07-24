@@ -1552,12 +1552,12 @@ setInterval(fetchLiveCandles,10000);
 (function(){
   let offset=0;
 
-  /* Build one EKG cycle in normalised [0,1] x [0,1] coords */
+  /* Build one EKG cycle in normalised [0,1] x [0,1] coords — Deep & High spikes */
   const CYCLE=[
-    [0,0.5],[0.12,0.5],[0.15,0.42],[0.18,0.5],
-    [0.20,0.5],
-    [0.22,0.5],[0.24,0.15],[0.265,0.92],[0.29,0.3],[0.31,0.5],
-    [0.36,0.5],[0.38,0.38],[0.42,0.62],[0.46,0.5],
+    [0,0.5],[0.10,0.5],[0.13,0.36],[0.16,0.5],
+    [0.19,0.5],
+    [0.21,0.5],[0.235,0.05],[0.265,0.95],[0.29,0.20],[0.31,0.5],
+    [0.36,0.5],[0.385,0.28],[0.42,0.72],[0.455,0.5],
     [1.0,0.5]
   ];
 
@@ -1591,7 +1591,7 @@ setInterval(fetchLiveCandles,10000);
     /* Read dynamic config from trade state engine */
     const cfg=(window._ekgConfig&&window._ekgState)?
       (window._ekgConfig[window._ekgState]||window._ekgConfig.flat):
-      {speed:0.6,color:'rgba(0,179,104,',trail:180};
+      {speed:1.4,color:'rgba(46,134,222,',trail:280};
     const spd=cfg.speed;
     const col=cfg.color;
     const trail=cfg.trail;
@@ -1599,49 +1599,49 @@ setInterval(fetchLiveCandles,10000);
     ctx.clearRect(0,0,W,H);
     /* Background subtle glow */
     const grd=ctx.createLinearGradient(0,0,0,H);
-    grd.addColorStop(0,col+'0.03)');
+    grd.addColorStop(0,col+'0.06)');
     grd.addColorStop(1,'transparent');
     ctx.fillStyle=grd;
     ctx.fillRect(0,0,W,H);
 
-    /* Grid lines */
-    ctx.strokeStyle=col+'0.07)';
+    /* Grid lines — clear radar style */
+    ctx.strokeStyle=col+'0.12)';
     ctx.lineWidth=1;
-    for(let x=0;x<W;x+=40){
+    for(let x=0;x<W;x+=30){
       ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();
     }
     ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();
 
     /* EKG line */
-    const cycleW=W*0.55;
+    const cycleW=W*0.48;
     ctx.beginPath();
     let started=false;
     for(let px=0;px<W;px++){
       const age=(offset-px+W*10)%W;
       if(age>trail)continue;
-      const y=sampleEkg(((px+offset)%cycleW)/cycleW)*(H-12)+6;
+      const y=sampleEkg(((px+offset)%cycleW)/cycleW)*(H-8)+4;
       if(!started){ctx.moveTo(px,y);started=true;}else{ctx.lineTo(px,y);}
     }
     /* Gradient stroke */
     const lineGrd=ctx.createLinearGradient(Math.max(0,offset-trail),0,offset,0);
     lineGrd.addColorStop(0,col+'0)');
-    lineGrd.addColorStop(0.7,col+'0.6)');
+    lineGrd.addColorStop(0.6,col+'0.7)');
     lineGrd.addColorStop(1,col+'1)');
     ctx.strokeStyle=lineGrd;
-    ctx.lineWidth=2;
-    ctx.shadowColor=col+'0.7)';
-    ctx.shadowBlur=6;
+    ctx.lineWidth=2.5;
+    ctx.shadowColor=col+'0.95)';
+    ctx.shadowBlur=10;
     ctx.stroke();
     ctx.shadowBlur=0;
 
     /* Leading dot */
     const leadT=((offset)%cycleW)/cycleW;
-    const leadY=sampleEkg(leadT)*(H-12)+6;
+    const leadY=sampleEkg(leadT)*(H-8)+4;
     ctx.beginPath();
-    ctx.arc(offset%W,leadY,3.5,0,Math.PI*2);
+    ctx.arc(offset%W,leadY,4.5,0,Math.PI*2);
     ctx.fillStyle=col+'1)';
-    ctx.shadowColor=col+'0.9)';
-    ctx.shadowBlur=10;
+    ctx.shadowColor=col+'1)';
+    ctx.shadowBlur=14;
     ctx.fill();
     ctx.shadowBlur=0;
 
@@ -1863,9 +1863,9 @@ setInterval(updateTicker,2500);
 /* ─── EKG speed & color adapts to trade state ─── */
 /* Patch the existing EKG loop speed via global state */
 window._ekgConfig={
-  flat:    {speed:0.35, color:'rgba(46,134,222,', trail:120},
-  'trade-long':  {speed:1.1,  color:'rgba(0,179,104,',  trail:200},
-  'trade-short': {speed:1.1,  color:'rgba(255,59,92,',  trail:200},
+  flat:          {speed:1.4, color:'rgba(46,134,222,',  trail:280},
+  'trade-long':  {speed:2.4, color:'rgba(0,255,136,',   trail:340},
+  'trade-short': {speed:2.4, color:'rgba(255,59,92,',   trail:340},
 };
 </script>
 </body>
