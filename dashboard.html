@@ -6,7 +6,7 @@
 <title>Shiva Sniper — Live Bot Console</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrainsMono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <style>
 /* ═══════════ Tokens ═══════════ */
@@ -54,7 +54,7 @@ body{font-family:var(--body);background:
 .bot-state .age{font-family:var(--mono);font-size:0.66rem;font-weight:500;color:var(--ink-3)}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,179,104,0.5)}55%{box-shadow:0 0 0 7px rgba(0,179,104,0)}}
 
-/* ═══════════ Tabs ═══════════ */
+/* ═══════════ Tabs (TASK 7: Mobile full-width thumb target) ═══════════ */
 .tabs{display:flex;gap:6px;margin-bottom:12px}
 .tab-btn{font-family:var(--disp);font-weight:700;font-size:0.9rem;background:var(--surface);border:2px solid var(--rule);border-radius:99px;color:var(--ink-2);cursor:pointer;padding:8px 20px;transition:color .15s,background .15s,border-color .15s,transform .1s}
 .tab-btn:hover{color:var(--ink);border-color:var(--ink)}
@@ -64,73 +64,77 @@ body{font-family:var(--body);background:
 .page{display:none}.page.active{display:block;animation:fadeUp .3s ease}
 @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
-/* ═══════════ Panels ═══════════ */
-.panel{background:var(--surface);border:2px solid var(--ink);border-radius:var(--r);overflow:hidden;box-shadow:0 3px 0 rgba(14,22,38,0.08)}
-.panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:11px 14px;border-bottom:2px solid var(--rule-soft)}
-.panel-head h2{font-family:var(--disp);font-size:0.9rem;font-weight:700;letter-spacing:-0.01em}
+/* ═══════════ Primary Panels (TASK 8: Content Panels vs Readout Tiles) ═══════════ */
+.panel{background:var(--surface);border:2px solid var(--ink);border-radius:var(--r);overflow:hidden;box-shadow:0 3px 0 rgba(14,22,38,0.08);height:auto}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:9px 14px;border-bottom:2px solid var(--rule-soft)}
+.panel-head h2{font-family:var(--disp);font-size:0.88rem;font-weight:700;letter-spacing:-0.01em}
 .panel-head .meta{font-family:var(--mono);font-size:0.66rem;font-weight:600;color:var(--ink-3)}
-.panel-body{padding:12px 14px}
+.panel-body{padding:10px 14px}
 
-/* ═══════════ Cycle rail (signature) ═══════════ */
+/* ═══════════ Bot Cycle Strip (TASK 1: -30% padding, progress bar, tight gaps) ═══════════ */
 .rail-panel{margin-bottom:12px}
 .rail-stage-label{font-family:var(--mono);font-size:0.74rem;font-weight:700;color:var(--amber);transition:color .4s}
-.rail{position:relative;display:grid;grid-template-columns:repeat(7,1fr);gap:8px;padding:42px 16px 12px;align-items:start}
-.rail-track{position:absolute;height:5px;border-radius:3px;background:var(--rule-soft);overflow:hidden}
-.rail-fill{height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,var(--blue),var(--fill-end,var(--purple)));transition:width .8s cubic-bezier(.4,0,.2,1),background .4s;box-shadow:0 0 10px rgba(46,134,222,0.5)}
-.rail-step{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;z-index:1}
-.rn-icon{width:40px;height:40px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:var(--surface);border:2.5px solid var(--rule);color:var(--ink-3);transition:background .35s,border-color .35s,color .35s,box-shadow .35s,transform .35s}
-.rn-icon svg{width:19px;height:19px}
-.rail-step .rn-name{font-family:var(--disp);font-weight:700;font-size:0.72rem;color:var(--ink-2);line-height:1.2;transition:color .3s}
-.rail-step.done .rn-icon{background:var(--sc);border-color:var(--sc);color:#fff;box-shadow:0 3px 10px color-mix(in srgb,var(--sc) 35%,transparent)}
+.rail-container{position:relative;padding:12px 14px 6px}
+.rail{position:relative;display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:24px 10px 8px;align-items:start}
+.rail-track{position:absolute;height:4px;border-radius:2px;background:var(--rule-soft);overflow:hidden}
+.rail-fill{height:100%;width:0;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--fill-end,var(--purple)));transition:width .6s ease;box-shadow:0 0 8px rgba(46,134,222,0.4)}
+.rail-step{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;z-index:1;cursor:pointer}
+.rn-icon{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:var(--surface);border:2px solid var(--rule);color:var(--ink-3);transition:all .25s ease}
+.rn-icon svg{width:17px;height:17px}
+.rail-step .rn-name{font-family:var(--disp);font-weight:700;font-size:0.68rem;color:var(--ink-2);line-height:1.15;transition:color .25s}
+.rail-step.done .rn-icon{background:var(--sc);border-color:var(--sc);color:#fff;box-shadow:0 2px 8px color-mix(in srgb,var(--sc) 35%,transparent)}
 .rail-step.done .rn-name{color:var(--sc)}
-.rail-step.active .rn-icon{background:var(--sc);border-color:var(--sc);color:#fff;transform:scale(1.12);animation:stagePulse 1.4s ease-in-out infinite}
+.rail-step.active .rn-icon{background:var(--sc);border-color:var(--sc);color:#fff;transform:scale(1.08);animation:stagePulse 1.4s ease-in-out infinite}
 .rail-step.active .rn-name{color:var(--sc)}
 @keyframes stagePulse{
-  0%,100%{box-shadow:0 0 0 5px color-mix(in srgb,var(--sc) 28%,transparent)}
-  50%{box-shadow:0 0 0 12px color-mix(in srgb,var(--sc) 5%,transparent)}
+  0%,100%{box-shadow:0 0 0 4px color-mix(in srgb,var(--sc) 28%,transparent)}
+  50%{box-shadow:0 0 0 10px color-mix(in srgb,var(--sc) 5%,transparent)}
 }
-/* little robot mascot */
-.rail-bot{position:absolute;top:4px;left:0;transform:translateX(-50%);z-index:2;transition:left .8s cubic-bezier(.45,1.35,.5,1);filter:drop-shadow(0 4px 6px rgba(14,22,38,0.25));animation:botBob 2s ease-in-out infinite}
+.rail-bot{position:absolute;top:0px;left:0;transform:translateX(-50%);z-index:2;transition:left .6s cubic-bezier(.45,1.35,.5,1);filter:drop-shadow(0 3px 5px rgba(14,22,38,0.22));animation:botBob 2s ease-in-out infinite}
 .rail-bot.idle{opacity:.45}
 .rail-bot .ant{animation:antGlow 1.2s ease-in-out infinite}
 .rail-bot .eye{transform-box:fill-box;transform-origin:center;animation:blink 4s infinite}
-@keyframes botBob{0%,100%{margin-top:0}50%{margin-top:-5px}}
+@keyframes botBob{0%,100%{margin-top:0}50%{margin-top:-4px}}
 @keyframes antGlow{0%,100%{opacity:1}50%{opacity:.3}}
 @keyframes blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(0.1)}}
-.rail-desc{font-size:0.8rem;font-weight:600;color:var(--ink-2);border-top:2px dashed var(--rule-soft);padding:9px 14px 11px;margin:0 14px 10px}
+.rail-desc{font-size:0.76rem;font-weight:600;color:var(--ink-2);border-top:1px dashed var(--rule-soft);padding:7px 14px 8px;margin:0 10px 4px;line-height:1.35}
 .rail-desc b{font-weight:800;color:var(--ink)}
 
-/* ═══════════ Live grid ═══════════ */
-.live-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:12px;align-items:start}
-.live-col{display:flex;flex-direction:column;gap:12px}
-
-/* stat tiles */
+/* ═══════════ Stat / Readout Tiles (TASK 8 & TASK 2) ═══════════ */
 .tile-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
-.tile{background:var(--surface);border:2px solid var(--ink);border-radius:var(--r);padding:11px 13px;box-shadow:0 3px 0 rgba(14,22,38,0.08)}
-.tile .t-label{font-size:0.6rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-3);margin-bottom:3px}
-.tile .t-value{font-family:var(--mono);font-size:1.15rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tile .t-sub{font-size:0.62rem;font-weight:600;color:var(--ink-3)}
+.tile{background:rgba(14,22,38,0.035);border:2px solid var(--rule);border-radius:var(--r);padding:10px 12px;box-shadow:none}
+.tile .t-label{font-size:0.6rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-3);margin-bottom:2px}
+.tile .t-value{font-family:var(--mono);font-size:1.1rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .t-sub{font-size:0.62rem;font-weight:600;color:var(--ink-3);display:flex;align-items:center;gap:4px}
 .t-value.pos{color:var(--green)}
 .t-value.neg{color:var(--rust)}
 
-/* open trade */
-.ot-empty{display:flex;flex-direction:column;align-items:center;gap:5px;padding:16px 10px;color:var(--ink-3);font-size:0.78rem;font-weight:600}
-.ot-dir{font-family:var(--disp);font-weight:800;font-size:0.95rem}
+/* ═══════════ Live Grid & Open Trade / Activity (TASK 3) ═══════════ */
+.live-grid{display:grid;gap:12px;align-items:start}
+.live-grid.split{grid-template-columns:1.15fr 1fr}
+.live-grid.merged{grid-template-columns:1fr}
+.live-col{display:flex;flex-direction:column;gap:12px}
+
+.status-substrip{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--rule-soft);font-size:0.78rem;color:var(--ink-2);font-weight:600;background:rgba(14,22,38,0.02)}
+.status-substrip .badge.flat{background:var(--rule);color:var(--ink-2);font-size:0.62rem;padding:2px 8px}
+
+.ot-empty{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 10px;color:var(--ink-3);font-size:0.76rem;font-weight:600;text-align:center}
+.ot-dir{font-family:var(--disp);font-weight:800;font-size:0.92rem}
 .ot-dir.long{color:var(--green)}.ot-dir.short{color:var(--rust)}
-.ot-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
-.ot-unr{font-family:var(--mono);font-weight:700;font-size:1.05rem}
-.ladder{position:relative;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--rust),var(--rule-soft),var(--green));margin:18px 6px 8px}
-.ladder .lm{position:absolute;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:var(--surface);border:2.5px solid var(--ink-3);transition:left .5s ease}
+.ot-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.ot-unr{font-family:var(--mono);font-weight:700;font-size:1.0rem}
+.ladder{position:relative;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--rust),var(--rule-soft),var(--green));margin:16px 6px 8px}
+.ladder .lm{position:absolute;top:50%;transform:translate(-50%,-50%);width:13px;height:13px;border-radius:50%;background:var(--surface);border:2.5px solid var(--ink-3);transition:left .5s ease}
 .ladder .lm.sl{border-color:var(--rust)}
 .ladder .lm.entry{border-color:var(--ink)}
-.ladder .lm.cur{background:var(--amber);border-color:var(--amber);width:14px;height:14px;z-index:2;box-shadow:0 0 0 4px var(--amber-soft)}
+.ladder .lm.cur{background:var(--amber);border-color:var(--amber);width:13px;height:13px;z-index:2;box-shadow:0 0 0 4px var(--amber-soft)}
 .ladder .lm.tp{border-color:var(--green)}
-.ladder-labels{display:flex;justify-content:space-between;font-family:var(--mono);font-size:0.64rem;font-weight:600;color:var(--ink-2);padding:0 2px}
+.ladder-labels{display:flex;justify-content:space-between;font-family:var(--mono);font-size:0.62rem;font-weight:600;color:var(--ink-2);padding:0 2px}
 .ladder-labels b{font-weight:700}
 .ll-sl b{color:var(--rust)}.ll-cur b{color:var(--amber)}.ll-tp b{color:var(--green)}
 
-/* activity feed — no scroll, capped list */
-.feed{font-family:var(--mono);font-size:0.7rem;font-weight:500;line-height:1.95;padding:8px 14px}
+/* Activity Feed (TASK 3: max-height 240px with scroll) */
+.feed{font-family:var(--mono);font-size:0.7rem;font-weight:500;line-height:1.9;padding:6px 14px;max-height:240px;overflow-y:auto;scrollbar-width:thin}
 .feed .fe{display:flex;gap:10px;white-space:nowrap}
 .feed .fe .ts{color:var(--ink-3);flex-shrink:0}
 .feed .fe .msg{overflow:hidden;text-overflow:ellipsis}
@@ -140,18 +144,23 @@ body{font-family:var(--body);background:
 .feed .fe.ev-close.win .msg{color:var(--green)}
 .feed .fe.ev-close.loss .msg{color:var(--rust)}
 .feed .fe.ev-status .msg{color:var(--ink);font-weight:700}
-.feed-empty{color:var(--ink-3);padding:14px;font-size:0.74rem;font-weight:600;font-family:var(--body)}
+.feed-empty{color:var(--ink-3);padding:10px 14px;font-size:0.74rem;font-weight:600;font-family:var(--body)}
 
-/* ═══════════ Trade log ═══════════ */
+/* ═══════════ Trade Log (TASK 4 & TASK 5: Auto height + Dotted Baseline) ═══════════ */
 .kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:12px}
 .kpi-row .tile.hero{grid-column:span 2;background:var(--ink);border-color:var(--ink)}
 .kpi-row .tile.hero .t-label{color:rgba(255,255,255,0.6)}
 .kpi-row .tile.hero .t-sub{color:rgba(255,255,255,0.55)}
-.tile.hero .t-value{font-size:1.7rem;color:#fff}
+.tile.hero .t-value{font-size:1.6rem;color:#fff}
 .tile.hero .t-value.pos{color:var(--green)}
 .tile.hero .t-value.neg{color:var(--rust)}
-.chart-panel .panel-body{height:250px;position:relative}
-.chart-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-3);font-size:0.8rem;font-weight:600}
+
+.chart-panel{transition:all .3s ease}
+.chart-panel .panel-body{position:relative;padding:10px 14px;height:auto}
+.chart-panel.empty .panel-body{height:140px}
+.chart-panel.active-chart .panel-body{height:300px}
+.chart-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-3);font-size:0.78rem;font-weight:600}
+
 .log-panel{margin-top:12px}
 table.blotter{width:100%;border-collapse:collapse;font-size:0.74rem;table-layout:fixed}
 table.blotter th{text-align:left;padding:9px 8px;font-family:var(--disp);font-weight:700;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.03em;color:#fff;background:var(--ink);cursor:pointer;user-select:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -159,7 +168,7 @@ table.blotter th:hover{color:var(--amber)}
 table.blotter th .arr{opacity:0.4}
 table.blotter th.sort-asc .arr,table.blotter th.sort-desc .arr{opacity:1;color:var(--amber)}
 table.blotter td{padding:8px;border-bottom:2px solid var(--rule-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
-table.blotter tbody tr:nth-child(even) td{background:rgba(14,22,38,0.025)}
+table.blotter tbody tr:nth-child(even) td{background:rgba(14,22,38,0.02)}
 table.blotter tbody tr:hover td{background:var(--green-soft)}
 .num{font-family:var(--mono);text-align:right;font-weight:700}
 .num.pos{color:var(--green)}.num.neg{color:var(--rust)}
@@ -169,36 +178,35 @@ table.blotter tbody tr:hover td{background:var(--green-soft)}
 .badge.scalp{border:2px solid var(--amber);color:var(--amber);background:transparent;padding:1px 6px}
 .dir-mark{font-family:var(--mono);font-weight:700}
 .dir-mark.long{color:var(--green)}.dir-mark.short{color:var(--rust)}
-.log-empty{text-align:center;padding:32px 14px;color:var(--ink-3);font-size:0.8rem;font-weight:600}
+.log-empty{text-align:center;padding:16px 14px;color:var(--ink-3);font-size:0.78rem;font-weight:600}
 
-/* breakdown strip */
+/* Breakdown strip & Monthly performance */
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
-.stat{background:var(--surface);border:2px solid var(--ink);border-radius:var(--r);padding:10px 12px;box-shadow:0 3px 0 rgba(14,22,38,0.08)}
-.stat .s-label{font-size:0.58rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-3);margin-bottom:3px}
+.stat{background:rgba(14,22,38,0.035);border:2px solid var(--rule);border-radius:var(--r);padding:10px 12px;box-shadow:none}
+.stat .s-label{font-size:0.58rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-3);margin-bottom:2px}
 .stat .s-value{font-family:var(--mono);font-size:1.05rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat .s-value.pos{color:var(--green)}
 .stat .s-value.neg{color:var(--rust)}
 .stat .s-sub{font-size:0.6rem;font-weight:600;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* monthly performance */
 .monthly-panel{margin-bottom:12px}
 table.monthly{width:100%;border-collapse:collapse;font-size:0.76rem}
-table.monthly th{text-align:left;padding:9px 12px;font-family:var(--disp);font-weight:700;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.03em;color:#fff;background:var(--ink);white-space:nowrap}
+table.monthly th{text-align:left;padding:8px 12px;font-family:var(--disp);font-weight:700;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.03em;color:#fff;background:var(--ink);white-space:nowrap}
 table.monthly th.num{text-align:right}
-table.monthly td{padding:9px 12px;border-bottom:2px solid var(--rule-soft);white-space:nowrap;font-weight:600}
+table.monthly td{padding:8px 12px;border-bottom:2px solid var(--rule-soft);white-space:nowrap;font-weight:600}
 table.monthly tbody tr:last-child td{border-bottom:none}
 table.monthly tbody tr:hover td{background:rgba(14,22,38,0.03)}
 table.monthly .m-name{font-family:var(--disp);font-weight:700}
 table.monthly .mbar-col{width:26%}
-.mbar{position:relative;height:9px;border-radius:5px;background:var(--rule-soft);overflow:hidden}
-.mbar span{position:absolute;top:0;bottom:0;border-radius:5px}
+.mbar{position:relative;height:8px;border-radius:4px;background:var(--rule-soft);overflow:hidden}
+.mbar span{position:absolute;top:0;bottom:0;border-radius:4px}
 .mbar span.pos{left:50%;background:var(--green)}
 .mbar span.neg{right:50%;background:var(--rust)}
 .mbar::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;background:var(--ink-3);transform:translateX(-50%)}
 
-/* ═══════════ Responsive / a11y ═══════════ */
+/* ═══════════ Mobile Breakpoints (TASK 2, 6, 7) ═══════════ */
 @media(max-width:920px){
-  .live-grid{grid-template-columns:1fr}
+  .live-grid.split{grid-template-columns:1fr}
   .kpi-row{grid-template-columns:repeat(3,1fr)}
   .kpi-row .tile.hero{grid-column:span 3}
   .stat-grid{grid-template-columns:repeat(2,1fr)}
@@ -206,20 +214,24 @@ table.monthly .mbar-col{width:26%}
 @media(max-width:640px){
   body{font-size:14px}
   .app{padding:0 10px 24px}
-  .tile-row{grid-template-columns:repeat(2,1fr)}
-  .kpi-row{grid-template-columns:repeat(2,1fr)}
+  .tabs{display:flex;width:100%;gap:6px}
+  .tab-btn{flex:1;text-align:center;padding:10px 0;font-size:0.86rem;border-radius:99px}
+  .tile-row{grid-template-columns:repeat(2,1fr);gap:8px}
+  .kpi-row{grid-template-columns:repeat(2,1fr);gap:8px}
   .kpi-row .tile.hero{grid-column:span 2}
-  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .stat-grid{grid-template-columns:repeat(2,1fr);gap:8px}
   table.blotter{font-size:0.64rem}
   table.blotter th,table.blotter td{padding:6px 4px}
   table.monthly{font-size:0.68rem}
   table.monthly th,table.monthly td{padding:7px 8px}
   table.monthly .mbar-col{display:none}
   .bot-state .age{display:none}
-  .rail{padding:38px 8px 12px;gap:4px}
-  .rail-step .rn-name{display:none}
-  .rn-icon{width:33px;height:33px;border-radius:10px}
-  .rn-icon svg{width:16px;height:16px}
+  .rail{padding:20px 4px 6px;gap:2px}
+  .rail-step .rn-name{font-size:0.6rem}
+  .rn-icon{width:32px;height:32px;border-radius:9px}
+  .rn-icon svg{width:15px;height:15px}
+  .rail-desc{display:none;font-size:0.72rem}
+  .rail-desc.mobile-show{display:block}
 }
 @media(prefers-reduced-motion:reduce){
   .bot-state.running .dot,.rail-bot,.rail-bot .ant,.rail-bot .eye,.rail-step.active .rn-icon{animation:none}
@@ -238,7 +250,7 @@ table.monthly .mbar-col{width:26%}
     <div class="bot-state" id="botState"><span class="dot"></span><span id="botStateText">Connecting…</span><span class="age" id="botStateAge"></span></div>
   </header>
 
-  <!-- TABS -->
+  <!-- TABS (Full-width thumb buttons on mobile) -->
   <nav class="tabs" role="tablist">
     <button class="tab-btn active" data-page="live" role="tab">Live</button>
     <button class="tab-btn" data-page="trades" role="tab">Trade Log</button>
@@ -253,40 +265,42 @@ table.monthly .mbar-col{width:26%}
         <h2>Bot Cycle</h2>
         <span class="rail-stage-label" id="railStage">waiting for the bot's first push…</span>
       </div>
-      <div class="rail" id="rail">
-        <div class="rail-track" id="railTrack"><div class="rail-fill" id="railFill"></div></div>
-        <div class="rail-bot idle" id="railBot" aria-hidden="true">
-          <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
-            <line x1="19" y1="9" x2="19" y2="4" stroke="#0E1626" stroke-width="2.4" stroke-linecap="round"/>
-            <circle class="ant" cx="19" cy="3" r="3" fill="#FF9500"/>
-            <rect x="5" y="9" width="28" height="18" rx="7" fill="#2E86DE"/>
-            <rect x="5" y="9" width="28" height="18" rx="7" fill="url(#botGrad)"/>
-            <rect x="9" y="13" width="20" height="10" rx="5" fill="#0E1626"/>
-            <circle class="eye" cx="15.5" cy="18" r="2.4" fill="#00E676"/>
-            <circle class="eye" cx="22.5" cy="18" r="2.4" fill="#00E676"/>
-            <rect x="1.5" y="15" width="3.5" height="7" rx="1.75" fill="#7C5CE0"/>
-            <rect x="33" y="15" width="3.5" height="7" rx="1.75" fill="#7C5CE0"/>
-            <rect x="12" y="29" width="14" height="5" rx="2.5" fill="#0E1626"/>
-            <defs><linearGradient id="botGrad" x1="5" y1="9" x2="33" y2="27" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#2E86DE"/><stop offset="1" stop-color="#7C5CE0"/>
-            </linearGradient></defs>
-          </svg>
+      <div class="rail-container">
+        <div class="rail" id="rail">
+          <div class="rail-track" id="railTrack"><div class="rail-fill" id="railFill"></div></div>
+          <div class="rail-bot idle" id="railBot" aria-hidden="true">
+            <svg width="34" height="34" viewBox="0 0 38 38" fill="none">
+              <line x1="19" y1="9" x2="19" y2="4" stroke="#0E1626" stroke-width="2.4" stroke-linecap="round"/>
+              <circle class="ant" cx="19" cy="3" r="3" fill="#FF9500"/>
+              <rect x="5" y="9" width="28" height="18" rx="7" fill="#2E86DE"/>
+              <rect x="5" y="9" width="28" height="18" rx="7" fill="url(#botGrad)"/>
+              <rect x="9" y="13" width="20" height="10" rx="5" fill="#0E1626"/>
+              <circle class="eye" cx="15.5" cy="18" r="2.4" fill="#00E676"/>
+              <circle class="eye" cx="22.5" cy="18" r="2.4" fill="#00E676"/>
+              <rect x="1.5" y="15" width="3.5" height="7" rx="1.75" fill="#7C5CE0"/>
+              <rect x="33" y="15" width="3.5" height="7" rx="1.75" fill="#7C5CE0"/>
+              <rect x="12" y="29" width="14" height="5" rx="2.5" fill="#0E1626"/>
+              <defs><linearGradient id="botGrad" x1="5" y1="9" x2="33" y2="27" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#2E86DE"/><stop offset="1" stop-color="#7C5CE0"/>
+              </linearGradient></defs>
+            </svg>
+          </div>
         </div>
       </div>
-      <div class="rail-desc" id="railDesc">The bot repeats this loop on every candle: pull the latest 30-minute bar, run the strategy math, and act on what it finds. The robot marks where it is right now.</div>
+      <div class="rail-desc" id="railDesc">The bot repeats this loop on every candle: pull the latest bar, run strategy math, and act on what it finds. Tap any step icon above to view details.</div>
     </div>
 
-    <!-- STAT TILES -->
+    <!-- STAT TILES (2x2 on Mobile, 4-Col Desktop) -->
     <div class="tile-row">
       <div class="tile"><div class="t-label">Position size</div><div class="t-value" id="stQty">—</div><div class="t-sub">lots</div></div>
       <div class="tile"><div class="t-label">Timeframe</div><div class="t-value" id="stTf">—</div><div class="t-sub">candle cycle</div></div>
       <div class="tile"><div class="t-label">Direction</div><div class="t-value" id="stDir">Flat</div><div class="t-sub" id="stDirSub">no open trade</div></div>
-      <div class="tile"><div class="t-label">Unrealized P/L</div><div class="t-value" id="stUnr">—</div><div class="t-sub" id="stUnrSub">&nbsp;</div></div>
+      <div class="tile"><div class="t-label">Unrealized P/L</div><div class="t-value" id="stUnr">—</div><div class="t-sub" id="stUnrSub"><svg width="24" height="6" viewBox="0 0 24 6" style="vertical-align:middle;opacity:0.4"><line x1="0" y1="3" x2="24" y2="3" stroke="currentColor" stroke-dasharray="3 3" stroke-width="2"/></svg></div></div>
     </div>
 
-    <div class="live-grid">
+    <!-- LIVE GRID (Merged Status & Activity card when no trade is open) -->
+    <div class="live-grid" id="liveGrid">
       <div class="live-col">
-        <!-- OPEN TRADE -->
         <div class="panel">
           <div class="panel-head"><h2>Open Trade</h2><span class="meta" id="otMeta"></span></div>
           <div class="panel-body" id="otBody">
@@ -295,7 +309,6 @@ table.monthly .mbar-col{width:26%}
         </div>
       </div>
       <div class="live-col">
-        <!-- ACTIVITY FEED -->
         <div class="panel">
           <div class="panel-head"><h2>Activity</h2><span class="meta">newest first</span></div>
           <div class="feed" id="feed"><div class="feed-empty">Bot events appear here as they happen — cycle steps, entries, and exits.</div></div>
@@ -314,11 +327,11 @@ table.monthly .mbar-col{width:26%}
       <div class="tile"><div class="t-label">Fees paid</div><div class="t-value" id="kComm">$0.00</div><div class="t-sub">incl. GST</div></div>
     </div>
 
-    <div class="panel chart-panel">
+    <div class="panel chart-panel empty">
       <div class="panel-head"><h2>Equity Curve</h2><span class="meta">cumulative net P/L</span></div>
       <div class="panel-body">
-        <div class="chart-empty" id="chartEmpty">The curve draws itself as trades close.</div>
-        <canvas id="equityChart" style="display:none" role="img" aria-label="Cumulative net profit and loss over closed trades"></canvas>
+        <div class="chart-empty" id="chartEmpty" style="display:none">The curve draws itself as trades close.</div>
+        <canvas id="equityChart" role="img" aria-label="Cumulative net profit and loss over closed trades"></canvas>
       </div>
     </div>
 
@@ -334,7 +347,7 @@ table.monthly .mbar-col{width:26%}
       <div class="stat"><div class="s-label">Worst trade</div><div class="s-value neg" id="bWorst">—</div><div class="s-sub" id="bWorstSub">&nbsp;</div></div>
     </div>
 
-    <!-- MONTHLY PERFORMANCE -->
+    <!-- MONTHLY PERFORMANCE (Compact auto-height) -->
     <div class="panel monthly-panel">
       <div class="panel-head"><h2>Monthly Performance</h2><span class="meta" id="monthlyMeta"></span></div>
       <table class="monthly" id="monthly"><thead><tr>
@@ -402,7 +415,7 @@ const fmtUsd=v=>{if(v==null||isNaN(v))return'$0.00';return(v<0?'−$':'$')+Math.
 const fmtUsdSigned=v=>(v>0?'+':'')+(v<0?'−':'')+'$'+Math.abs(v||0).toFixed(2);
 const fmtAge=s=>{if(s<60)return Math.floor(s)+'s ago';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago'};
 
-/* ─── Workflow steps (indices match dashboard_push.push_workflow_step) ─── */
+/* ─── Workflow steps ─── */
 const ICONS={
   candle:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="21"/><rect x="5" y="7" width="6" height="9" rx="1.2" fill="currentColor" stroke="none"/><line x1="16" y1="3" x2="16" y2="21"/><rect x="13" y="5" width="6" height="8" rx="1.2" fill="currentColor" stroke="none"/></svg>',
   pulse:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 12 7 12 10 4 14 20 17 12 22 12"/></svg>',
@@ -413,13 +426,13 @@ const ICONS={
   book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/></svg>',
 };
 const STEPS=[
-  {name:'Fetch Candle', sub:'new 30m bar',    color:'#2E86DE', icon:ICONS.candle, desc:'A candle just closed — the bot pulls the fresh bar and updates its indicators (EMA, ADX, ATR, RSI).'},
-  {name:'Eval Signal',  sub:'strategy math',  color:'#7C5CE0', icon:ICONS.pulse,  desc:'The strategy checks trend, momentum and volatility filters against the new bar to decide if a setup exists.'},
+  {name:'Fetch Candle', sub:'new 30m bar',    color:'#2E86DE', icon:ICONS.candle, desc:'A candle closed — the bot pulls the fresh bar and updates its indicators (EMA, ADX, ATR, RSI).'},
+  {name:'Eval Signal',  sub:'strategy math',  color:'#7C5CE0', icon:ICONS.pulse,  desc:'The strategy checks trend, momentum and volatility filters against the new bar.'},
   {name:'Entry Check',  sub:'risk levels',    color:'#00C2C7', icon:ICONS.shield, desc:'A signal fired — the bot computes stop-loss and take-profit levels and sends the entry order.'},
-  {name:'Position Open',sub:'order filled',   color:'#00B368', icon:ICONS.enter,  desc:'The entry is filled. Stop-loss and take-profit are armed; the trail monitor takes over.'},
-  {name:'Monitor SL/TP',sub:'trailing stop',  color:'#FF9500', icon:ICONS.eye,    desc:'A trade is open. The bot watches every tick, tightening the trailing stop as price moves in its favor.'},
-  {name:'Exit',         sub:'close order',    color:'#FF3B5C', icon:ICONS.exit,   desc:'An exit condition hit (TP, SL, trail, or reversal) — the bot is closing the position at market.'},
-  {name:'Log Trade',    sub:'journal + push', color:'#3D8BFF', icon:ICONS.book,   desc:'The finished trade is written to the journal and pushed here to the blotter.'},
+  {name:'Position Open',sub:'order filled',   color:'#00B368', icon:ICONS.enter,  desc:'Entry filled. Stop-loss and take-profit are armed; trail monitor takes over.'},
+  {name:'Monitor SL/TP',sub:'trailing stop',  color:'#FF9500', icon:ICONS.eye,    desc:'Trade open. The bot watches every tick, tightening trailing stops as price advances.'},
+  {name:'Exit',         sub:'close order',    color:'#FF3B5C', icon:ICONS.exit,   desc:'Exit condition hit (TP, SL, trail, or reversal) — closing position at market.'},
+  {name:'Log Trade',    sub:'journal + push', color:'#3D8BFF', icon:ICONS.book,   desc:'Finished trade written to journal and pushed to blotter.'},
 ];
 
 /* ─── State ─── */
@@ -501,7 +514,7 @@ function renderMast(){
   }else{chip.textContent='—';chip.className='mode-chip'}
 }
 
-/* ─── Render: cycle rail ─── */
+/* ─── Render: cycle rail (TASK 1: Progress bar + interactive tap details) ─── */
 function initRail(){
   const rail=document.getElementById('rail');
   const bot=document.getElementById('railBot');
@@ -509,8 +522,15 @@ function initRail(){
     const el=document.createElement('div');
     el.className='rail-step';
     el.style.setProperty('--sc',s.color);
-    el.innerHTML='<div class="rn-icon">'+s.icon+'</div>'+
-      '<span class="rn-name">'+s.name+'</span>';
+    el.setAttribute('title', s.name + ': ' + s.desc);
+    el.innerHTML='<div class="rn-icon">'+s.icon+'</div><span class="rn-name">'+s.name+'</span>';
+    el.addEventListener('click', ()=>{
+      const descEl=document.getElementById('railDesc');
+      if(descEl){
+        descEl.innerHTML='<b>'+s.name+':</b> '+s.desc;
+        descEl.classList.add('mobile-show');
+      }
+    });
     rail.insertBefore(el,bot);
   });
 }
@@ -520,7 +540,7 @@ function layoutRail(){
   const icons=rail.querySelectorAll('.rn-icon');
   if(!icons.length)return;
   const railBox=rail.getBoundingClientRect();
-  if(railBox.width===0)return; // Live tab hidden — re-laid out on tab switch
+  if(railBox.width===0)return;
   const first=icons[0].getBoundingClientRect(),last=icons[icons.length-1].getBoundingClientRect();
   const startX=first.left-railBox.left+first.width/2;
   const endX=last.left-railBox.left+last.width/2;
@@ -534,8 +554,11 @@ function layoutRail(){
   const target=icons[iconIdx].getBoundingClientRect();
   const targetX=target.left-railBox.left+target.width/2;
   document.getElementById('railBot').style.left=targetX+'px';
+  
+  /* Progress bar fill % = (current_step + 1) / total_steps * 100% */
   const fill=document.getElementById('railFill');
-  fill.style.width=(idx>0?targetX-startX:0)+'px';
+  const progressPct=idx>=0?Math.min(100, Math.max(0, ((idx + 1) / STEPS.length) * (endX - startX))) : 0;
+  fill.style.width=progressPct+'px';
   if(idx>=0&&idx<STEPS.length)fill.style.setProperty('--fill-end',STEPS[idx].color);
 }
 
@@ -554,19 +577,26 @@ function renderRail(){
   }else{
     stage.textContent='waiting for the bot’s first push…';
     stage.style.color='';
-    document.getElementById('railDesc').textContent='The bot repeats this loop on every candle: pull the latest bar, run the strategy math, and act on what it finds. The robot marks where it is right now.';
+    document.getElementById('railDesc').textContent='The bot repeats this loop on every candle: pull the latest bar, run strategy math, and act on what it finds. Tap any step icon above to view details.';
   }
   layoutRail();
 }
 
-/* ─── Render: live tiles + open trade ─── */
+/* ─── Render Feed Items ─── */
+function renderFeedHtml(){
+  return feedItems.length
+    ?feedItems.map(f=>'<div class="fe '+f.cls+'"><span class="ts">'+fmtClock(f.ts)+'</span><span class="msg">'+f.msg+'</span></div>').join('')
+    :'<div class="feed-empty">Bot events appear here as they happen — cycle steps, entries, and exits.</div>';
+}
+
+/* ─── Render: Live tiles + Merged/Split Open Trade & Activity (TASK 3) ─── */
 function renderLive(){
   const b=st.botStatus,ot=st.openTrade;
   document.getElementById('stQty').textContent=b&&b.qty!=null?b.qty:'—';
   document.getElementById('stTf').textContent=b&&b.timeframe?b.timeframe:'—';
   const dirEl=document.getElementById('stDir'),dirSub=document.getElementById('stDirSub');
   const unrEl=document.getElementById('stUnr'),unrSub=document.getElementById('stUnrSub');
-  const body=document.getElementById('otBody'),meta=document.getElementById('otMeta');
+  const liveGrid=document.getElementById('liveGrid');
 
   if(ot){
     const long=ot.direction==='long';
@@ -576,37 +606,56 @@ function renderLive(){
     const u=ot.unrealizedPnl||0;
     unrEl.textContent=fmtUsdSigned(u);unrEl.className='t-value '+(u>=0?'pos':'neg');
     unrSub.textContent='open trade';
-    meta.textContent=ot.entryTime?('since '+fmtTime(ot.entryTime)):'';
+
     const ps=[ot.sl,ot.entryPrice,ot.currentPrice,ot.tp].filter(v=>v!=null&&v>0);
     const mn=Math.min(...ps),mx=Math.max(...ps),range=(mx-mn)||1;
     const pct=v=>Math.min(97,Math.max(3,(v-mn)/range*100))+'%';
-    body.innerHTML=
-      '<div class="ot-head"><span class="ot-dir '+(long?'long':'short')+'">'+(long?'▲ LONG':'▼ SHORT')+'</span>'+
-      '<span class="ot-unr '+(u>=0?'pos':'neg')+'" style="color:'+(u>=0?'var(--green)':'var(--rust)')+'">'+fmtUsdSigned(u)+'</span></div>'+
-      '<div class="ladder">'+
-        (ot.sl?'<div class="lm sl" style="left:'+pct(ot.sl)+'" title="Stop loss"></div>':'')+
-        '<div class="lm entry" style="left:'+pct(ot.entryPrice)+'" title="Entry"></div>'+
-        (ot.currentPrice?'<div class="lm cur" style="left:'+pct(ot.currentPrice)+'" title="Current price"></div>':'')+
-        (ot.tp?'<div class="lm tp" style="left:'+pct(ot.tp)+'" title="Take profit"></div>':'')+
+
+    liveGrid.className='live-grid split';
+    liveGrid.innerHTML=
+      '<div class="live-col">'+
+        '<div class="panel">'+
+          '<div class="panel-head"><h2>Open Trade</h2><span class="meta">' + (ot.entryTime ? ('since '+fmtTime(ot.entryTime)) : '') + '</span></div>'+
+          '<div class="panel-body">'+
+            '<div class="ot-head"><span class="ot-dir '+(long?'long':'short')+'">'+(long?'▲ LONG':'▼ SHORT')+'</span>'+
+            '<span class="ot-unr '+(u>=0?'pos':'neg')+'" style="color:'+(u>=0?'var(--green)':'var(--rust)')+'">'+fmtUsdSigned(u)+'</span></div>'+
+            '<div class="ladder">'+
+              (ot.sl?'<div class="lm sl" style="left:'+pct(ot.sl)+'" title="Stop loss"></div>':'')+
+              '<div class="lm entry" style="left:'+pct(ot.entryPrice)+'" title="Entry"></div>'+
+              (ot.currentPrice?'<div class="lm cur" style="left:'+pct(ot.currentPrice)+'" title="Current price"></div>':'')+
+              (ot.tp?'<div class="lm tp" style="left:'+pct(ot.tp)+'" title="Take profit"></div>':'')+
+            '</div>'+
+            '<div class="ladder-labels">'+
+              '<span class="ll-sl">SL <b>$'+Number(ot.sl||0).toLocaleString()+'</b></span>'+
+              '<span class="ll-entry">Entry <b>$'+Number(ot.entryPrice||0).toLocaleString()+'</b></span>'+
+              '<span class="ll-cur">Now <b>$'+Number(ot.currentPrice||0).toLocaleString()+'</b></span>'+
+              '<span class="ll-tp">TP <b>$'+Number(ot.tp||0).toLocaleString()+'</b></span>'+
+            '</div>'+
+          '</div>'+
+        '</div>'+
       '</div>'+
-      '<div class="ladder-labels">'+
-        '<span class="ll-sl">SL <b>$'+Number(ot.sl||0).toLocaleString()+'</b></span>'+
-        '<span class="ll-entry">Entry <b>$'+Number(ot.entryPrice||0).toLocaleString()+'</b></span>'+
-        '<span class="ll-cur">Now <b>$'+Number(ot.currentPrice||0).toLocaleString()+'</b></span>'+
-        '<span class="ll-tp">TP <b>$'+Number(ot.tp||0).toLocaleString()+'</b></span>'+
+      '<div class="live-col">'+
+        '<div class="panel">'+
+          '<div class="panel-head"><h2>Activity</h2><span class="meta">newest first</span></div>'+
+          '<div class="feed" id="feed">'+renderFeedHtml()+'</div>'+
+        '</div>'+
       '</div>';
   }else{
     dirEl.textContent='Flat';dirEl.className='t-value';
     dirSub.textContent='no open trade';
-    unrEl.textContent='—';unrEl.className='t-value';unrSub.innerHTML='&nbsp;';
-    meta.textContent='';
-    body.innerHTML='<div class="ot-empty">No open trade.<span>The bot enters when a signal passes every filter.</span></div>';
-  }
+    unrEl.textContent='—';unrEl.className='t-value';
+    unrSub.innerHTML='<svg width="24" height="6" viewBox="0 0 24 6" style="vertical-align:middle;opacity:0.4"><line x1="0" y1="3" x2="24" y2="3" stroke="currentColor" stroke-dasharray="3 3" stroke-width="2"/></svg>';
 
-  const feed=document.getElementById('feed');
-  feed.innerHTML=feedItems.length
-    ?feedItems.map(f=>'<div class="fe '+f.cls+'"><span class="ts">'+fmtClock(f.ts)+'</span><span class="msg">'+f.msg+'</span></div>').join('')
-    :'<div class="feed-empty">Bot events appear here as they happen — cycle steps, entries, and exits.</div>';
+    liveGrid.className='live-grid merged';
+    liveGrid.innerHTML=
+      '<div class="live-col">'+
+        '<div class="panel">'+
+          '<div class="panel-head"><h2>Status & Activity</h2><span class="meta">newest first</span></div>'+
+          '<div class="status-substrip"><span class="badge flat">FLAT</span> <span>No active position — bot is monitoring candle conditions</span></div>'+
+          '<div class="feed" id="feed">'+renderFeedHtml()+'</div>'+
+        '</div>'+
+      '</div>';
+  }
 }
 
 /* ─── Render: trade log ─── */
@@ -663,7 +712,7 @@ function renderLog(){
   renderAnalytics(tr);
 }
 
-/* ─── Render: breakdown strip + monthly performance ─── */
+/* ─── Render: breakdown strip + monthly performance (TASK 5) ─── */
 function renderAnalytics(tr){
   const set=(id,txt)=>{const e=document.getElementById(id);if(e)e.textContent=txt};
   const sub=(id,txt)=>{const e=document.getElementById(id);if(e)e.innerHTML=txt};
@@ -750,9 +799,36 @@ function renderAnalytics(tr){
   }).join('');
 }
 
+/* ─── Render: Equity Chart (TASK 4: Flat Dotted Baseline at $0 when trades === 0) ─── */
 function renderChart(tr){
+  const chartPanel=document.querySelector('.chart-panel');
   const emptyEl=document.getElementById('chartEmpty'),cv=document.getElementById('equityChart');
-  if(!tr.length){emptyEl.style.display='flex';cv.style.display='none';if(chart){chart.destroy();chart=null}return}
+
+  if(!tr.length){
+    if(chartPanel){chartPanel.classList.add('empty');chartPanel.classList.remove('active-chart');}
+    emptyEl.style.display='none';
+    cv.style.display='block';
+    if(chart)chart.destroy();
+    const ctx=cv.getContext('2d');
+    chart=new Chart(ctx,{
+      type:'line',
+      data:{labels:['Start','Current'],datasets:[{
+        label:'Baseline $0',data:[0,0],
+        borderColor:'rgba(14,22,38,0.25)',borderDash:[4,4],borderWidth:1.5,pointRadius:0,fill:false
+      }]},
+      options:{
+        responsive:true,maintainAspectRatio:false,animation:false,
+        plugins:{legend:{display:false},tooltip:{enabled:false}},
+        scales:{
+          x:{grid:{display:false},ticks:{font:{size:9},color:'rgba(14,22,38,0.3)'}},
+          y:{grid:{color:'rgba(14,22,38,0.06)'},border:{display:false},suggestedMin:-10,suggestedMax:10,ticks:{font:{size:9,family:'JetBrains Mono'},color:'rgba(14,22,38,0.4)',callback:v=>fmtUsd(v)}}
+        }
+      }
+    });
+    return;
+  }
+
+  if(chartPanel){chartPanel.classList.remove('empty');chartPanel.classList.add('active-chart');}
   emptyEl.style.display='none';cv.style.display='block';
   const chron=[...tr].sort((a,b)=>a.entryTime-b.entryTime);
   let cum=0;const data=chron.map(t=>{cum+=t.netPnl;return cum});
