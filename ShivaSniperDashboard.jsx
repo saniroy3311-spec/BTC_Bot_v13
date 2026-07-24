@@ -35,26 +35,28 @@ const STEPS = [
   { id: 'loop', l: '↻' },
 ];
 
-// ─── Fee helpers ───
+const getCS = (cs) => (cs && cs > 0 && cs <= 0.01) ? cs : 0.001;
+
 const calcFee = (p, q, cs, t = 'taker') =>
-  p * q * cs * (t === 'maker' ? FEE_RATE_MAKER : FEE_RATE_TAKER) * (1 + GST);
+  p * q * getCS(cs) * (t === 'maker' ? FEE_RATE_MAKER : FEE_RATE_TAKER) * (1 + GST);
 
 const computeTrade = (t) => {
+  const cs = getCS(t.contractSize);
   const pts = (t.exitPrice - t.entryPrice) * (t.direction === 'long' ? 1 : -1);
-  const gross = pts * t.qty * t.contractSize;
+  const gross = pts * t.qty * cs;
   const hold = (t.exitTime - t.entryTime) / 1000;
   const btcEth = t.symbol === 'BTCUSD' || t.symbol === 'ETHUSD';
   const window = btcEth ? SCALP_BTC : SCALP_OTHER;
-  const entryFee = calcFee(t.entryPrice, t.qty, t.contractSize, t.feeType);
+  const entryFee = calcFee(t.entryPrice, t.qty, cs, t.feeType);
   let exitFee = 0, scalper = false;
   if (t.exitReason === 'liquidation') {
-    exitFee = calcFee(t.exitPrice, t.qty, t.contractSize, t.feeType);
+    exitFee = calcFee(t.exitPrice, t.qty, cs, t.feeType);
   } else if (hold <= window) {
     scalper = true;
   } else {
-    exitFee = calcFee(t.exitPrice, t.qty, t.contractSize, t.feeType);
+    exitFee = calcFee(t.exitPrice, t.qty, cs, t.feeType);
   }
-  return { ...t, pointsCaptured: pts, grossPnl: gross, totalCommission: entryFee + exitFee, netPnl: gross - entryFee - exitFee, scalperApplied: scalper };
+  return { ...t, contractSize: cs, pointsCaptured: pts, grossPnl: gross, totalCommission: entryFee + exitFee, netPnl: gross - entryFee - exitFee, scalperApplied: scalper };
 };
 
 const fmtTime = (ts) => {

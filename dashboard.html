@@ -752,7 +752,11 @@ table.monthly .mbar-col{width:26%}
 'use strict';
 /* ─── Fee model (Delta India taker/maker + GST, scalper fee waiver) ─── */
 const FEE_TAKER=0.0005,FEE_MAKER=0.0002,GST=0.18,SCALP_BTC=1800,SCALP_OTHER=900;
-function feeOf(price,qty,cs,type){const r=type==='maker'?FEE_MAKER:FEE_TAKER;return price*qty*cs*r*(1+GST)}
+function getContractSize(cs){
+  /* 1 lot = 0.001 BTC. If contractSize is missing or set to total position size (>0.01 like 0.1), sanitize to 0.001 */
+  return (cs && cs > 0 && cs <= 0.01) ? cs : 0.001;
+}
+function feeOf(price,qty,cs,type){const r=type==='maker'?FEE_MAKER:FEE_TAKER;const actualCs=getContractSize(cs);return price*qty*actualCs*r*(1+GST)}
 function commOf(t){
   const holdS=(t.exitTime-t.entryTime)/1e3;
   const isBtc=t.symbol==='BTCUSD'||t.symbol==='ETHUSD';
@@ -765,10 +769,11 @@ function commOf(t){
   return{total:entry+exit,scalper};
 }
 function enrich(t){
+  const cs=getContractSize(t.contractSize);
   const pts=(t.exitPrice-t.entryPrice)*(t.direction==='long'?1:-1);
-  const gross=pts*t.qty*t.contractSize;
+  const gross=pts*t.qty*cs;
   const c=commOf(t);
-  return{...t,pointsCaptured:pts,grossPnl:gross,totalCommission:c.total,netPnl:gross-c.total,scalperApplied:c.scalper};
+  return{...t,contractSize:cs,pointsCaptured:pts,grossPnl:gross,totalCommission:c.total,netPnl:gross-c.total,scalperApplied:c.scalper};
 }
 
 /* ─── Formatters ─── */
