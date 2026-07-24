@@ -1025,6 +1025,14 @@ function renderLive(){
         '<div class="panel">'+
           '<div class="panel-head"><h2>Status & Activity</h2><span class="meta">newest first</span></div>'+
           '<div class="status-substrip"><span class="badge flat">FLAT</span> <span>No active position — bot is monitoring candle conditions</span></div>'+
+          '<div class="ekg-wrap" id="ekgWrap">'+
+            '<canvas id="ekgCanvas" aria-hidden="true"></canvas>'+
+            '<span class="ekg-label" id="ekgLabel">SCANNING ●</span>'+
+            '<div class="scan-overlay" id="scanOverlay">'+
+              '<span class="scan-text" id="scanText">SCANNING MARKET…</span>'+
+            '</div>'+
+            '<div class="scan-line-h" id="scanLineH"></div>'+
+          '</div>'+
           '<div class="feed" id="feed">'+renderFeedHtml()+'</div>'+
         '</div>'+
       '</div>';
@@ -1520,17 +1528,7 @@ setInterval(fetchLiveCandles,10000);
 
 /* ─── EKG Heartbeat Canvas ─── */
 (function(){
-  const c=document.getElementById('ekgCanvas');
-  if(!c)return;
-  const ctx=c.getContext('2d');
-  let W,H,offset=0;
-  function resize(){
-    const wrap=c.parentElement;
-    W=c.width=wrap.offsetWidth||400;
-    H=c.height=52;
-  }
-  resize();
-  window.addEventListener('resize',resize);
+  let offset=0;
 
   /* Build one EKG cycle in normalised [0,1] x [0,1] coords */
   const CYCLE=[
@@ -1542,7 +1540,6 @@ setInterval(fetchLiveCandles,10000);
   ];
 
   function sampleEkg(t){
-    /* t in [0,1], returns y in [0,1] */
     const seg=CYCLE;
     for(let i=0;i<seg.length-1;i++){
       const [x0,y0]=seg[i],[x1,y1]=seg[i+1];
@@ -1554,10 +1551,21 @@ setInterval(fetchLiveCandles,10000);
     return 0.5;
   }
 
-  const SPEED=0.6; /* pixels per frame — overridden by _ekgConfig */
-  const TRAIL=180; /* px of visible trail — overridden by _ekgConfig */
-
   function frame(){
+    const c = document.getElementById('ekgCanvas');
+    if(!c) {
+      requestAnimationFrame(frame);
+      return;
+    }
+    const wrap = c.parentElement;
+    const targetW = (wrap && wrap.offsetWidth) ? wrap.offsetWidth : 400;
+    if(c.width !== targetW || c.height !== 52) {
+      c.width = targetW;
+      c.height = 52;
+    }
+    const ctx = c.getContext('2d');
+    const W = c.width, H = c.height;
+
     /* Read dynamic config from trade state engine */
     const cfg=(window._ekgConfig&&window._ekgState)?
       (window._ekgConfig[window._ekgState]||window._ekgConfig.flat):
