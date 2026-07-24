@@ -15,14 +15,16 @@ def get_db_connection(db_name=None):
     if db_name is None:
         db_name = CLIENTS_DB
     if TURSO_URL and TURSO_TOKEN:
-        import libsql_experimental as libsql
-        conn = libsql.connect(database=TURSO_URL, auth_token=TURSO_TOKEN)
-        return conn
-    else:
-        import sqlite3
-        conn = sqlite3.connect(db_name)
-        conn.row_factory = sqlite3.Row
-        return conn
+        try:
+            import libsql_experimental as libsql
+            conn = libsql.connect(database=TURSO_URL, auth_token=TURSO_TOKEN)
+            return conn
+        except ImportError:
+            pass  # Fall back to SQLite
+    import sqlite3
+    conn = sqlite3.connect(db_name)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 def _exec(conn, query, params=()):
     cursor = conn.execute(query, params)

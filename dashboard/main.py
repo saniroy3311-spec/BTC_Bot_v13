@@ -11,8 +11,7 @@ from datetime import datetime, timedelta
 import time
 from typing import Optional, List
 from dashboard import database
-from risk.lot_sizing import btc_to_lots
-from config import POSITION_BTC_SIZE
+from config import POSITION_BTC_SIZE, ALERT_QTY
 
 # Resolve runtime file paths to repo root (parent of dashboard/)
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -302,7 +301,7 @@ async def get_status():
         "btc_price": btc_price,
         "open_position": open_position,
         "settings": settings,
-        "bot_qty_lots": btc_to_lots(POSITION_BTC_SIZE) if POSITION_BTC_SIZE > 0 else 1
+        "bot_qty_lots": ALERT_QTY
     }
 
 # 2. Trades API
@@ -319,7 +318,7 @@ def get_trades(
 ):
     query = "SELECT id, ts as exit_time, ts as entry_time, CASE WHEN is_long=1 THEN 'LONG' ELSE 'SHORT' END as side, entry_price, exit_price, qty, real_pl as net_pnl, real_pl as gross_pnl, 0 as fee, points_captured, exit_reason, signal_type FROM trades WHERE 1=1"
     params = []
-    
+
     if start_date:
         query += " AND ts >= ?"
         params.append(start_date)
@@ -346,9 +345,21 @@ def get_trades(
     if tag:
         query += " AND exit_reason LIKE ?"
         params.append(f"%{tag}%")
-        
+
     query += " ORDER BY ts DESC"
     trades = get_db_rows(database.JOURNAL_DB, query, params)
+
+    # Format timestamps for display
+    from datetime import datetime
+    for t in trades:
+        try:
+            if t.get('exit_time'):
+                dt = datetime.fromisoformat(t['exit_time'].replace('Z', '+00:00'))
+                t['exit_time'] = dt.strftime('%Y-%m-%d %H:%M:%S')
+                t['entry_time'] = dt.strftime('%Y-%m-%d %H:%M:%S')
+        except:
+            pass
+
     return trades
 
 # 3. Client Management CRUD

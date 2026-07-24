@@ -116,9 +116,9 @@ class BTCBotV13:
         # )
 
         try:
-            self._qty_lots = btc_to_lots(POSITION_BTC_SIZE) if POSITION_BTC_SIZE > 0 else ALERT_QTY
+            self._qty_lots = ALERT_QTY
         except Exception as e:
-            logger.warning(f"btc_to_lots failed ({e}) — falling back to ALERT_QTY={ALERT_QTY}")
+            logger.warning(f"qty_lots failed ({e}) — falling back to ALERT_QTY={ALERT_QTY}")
             self._qty_lots = ALERT_QTY
 
         _dashboard.init(self._journal)

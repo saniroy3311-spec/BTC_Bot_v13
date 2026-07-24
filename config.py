@@ -98,9 +98,20 @@ DELTA_API_KEY    = os.environ.get("DELTA_API_KEY",    "YOUR_API_KEY")
 DELTA_API_SECRET = os.environ.get("DELTA_API_SECRET", "YOUR_API_SECRET")
 DELTA_TESTNET    = os.environ.get("DELTA_TESTNET", "false").lower() == "true"
 SYMBOL    = os.environ.get("SYMBOL",    "BTC/USD:USD")
-ALERT_QTY = int(os.environ.get("ALERT_QTY", "1"))
-# position size in BTC. Converted to lots via risk.lot_sizing.btc_to_lots
+
+# Position size configuration — SINGLE SOURCE OF TRUTH:
+# POSITION_BTC_SIZE is the intended BTC position size (e.g., 0.1 = 100 lots on Delta)
+# ALERT_QTY is DEPRECATED — derived automatically from POSITION_BTC_SIZE for backward compat
+# 1 Lot = 0.001 BTC face value on Delta India BTCUSD perpetual
 POSITION_BTC_SIZE = float(os.environ.get("POSITION_BTC_SIZE", "0.001"))
+# Derived qty in lots (contracts) for order placement — single source of truth
+try:
+    from risk.lot_sizing import btc_to_lots
+    ALERT_QTY = btc_to_lots(POSITION_BTC_SIZE)
+except Exception:
+    # Fallback if risk module not yet loadable at config import time
+    ALERT_QTY = int(os.environ.get("ALERT_QTY", str(int(round(POSITION_BTC_SIZE / 0.001)))))
+
 # Paper trading mode: true = simulate trades, never place real orders on Delta
 PAPER_TRADING = os.environ.get("PAPER_TRADING", "true").lower() == "true"
 
