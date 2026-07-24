@@ -159,6 +159,7 @@ body{font-family:var(--body);background:
 .chart-panel .panel-body{position:relative;padding:10px 14px;height:auto}
 .chart-panel.empty .panel-body{height:140px}
 .chart-panel.active-chart .panel-body{height:300px}
+canvas#equityChart{width:100% !important;height:100% !important}
 .chart-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-3);font-size:0.78rem;font-weight:600}
 
 .log-panel{margin-top:12px}
@@ -598,7 +599,8 @@ function renderLive(){
   const unrEl=document.getElementById('stUnr'),unrSub=document.getElementById('stUnrSub');
   const liveGrid=document.getElementById('liveGrid');
 
-  if(ot){
+  const hasTrade = Boolean(ot && typeof ot === 'object' && (ot.id || ot.entryPrice || ot.direction));
+  if(hasTrade){
     const long=ot.direction==='long';
     dirEl.textContent=long?'Long':'Short';
     dirEl.className='t-value '+(long?'pos':'neg');
