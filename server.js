@@ -178,6 +178,18 @@ async function handleRequest(req, res) {
     return;
   }
 
+  // ── POST /api/reset — clear all dashboard state ─────────
+  if (pathname === '/api/reset' && req.method === 'POST') {
+    state = { botStatus: null, openTrade: null, trades: [], currentStep: -1, lastUpdate: Date.now() };
+    notifiedTrades.clear();
+    try {
+      if (fs.existsSync(STATE_FILE)) fs.unlinkSync(STATE_FILE);
+    } catch (e) {}
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok', message: 'Dashboard state cleared' }));
+    return;
+  }
+
   // ── POST /api/state — bot pushes updates ──────────────
   if (pathname === '/api/state' && req.method === 'POST') {
     try {
