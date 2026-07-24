@@ -199,6 +199,8 @@ class BTCBotV13:
                 f"Entry (approx): {existing['entry_price']:.2f}\n"
                 f"Trail management resumes on next bar close."
             )
+        else:
+            await self._telegram.notify_start()
 
         await self._telegram.send(
             f"🟢 <b>BTC Bot v13 Started</b>\n"
