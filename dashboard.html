@@ -30,7 +30,7 @@
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --disp:"Space Grotesk","Inter",sans-serif;
   --body:"Inter",-apple-system,"Segoe UI",Roboto,sans-serif;
-  --r:12px;
+  --r:0px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
@@ -44,7 +44,7 @@ body{font-family:var(--body);background:
 .masthead{display:flex;align-items:center;gap:14px;padding:12px 0 10px;border-bottom:3px solid var(--ink);margin-bottom:12px;flex-wrap:wrap}
 .brand{font-family:var(--disp);font-weight:700;font-size:1.3rem;letter-spacing:-0.01em;white-space:nowrap}
 .brand .tick{color:var(--green)}
-.mode-chip{font-family:var(--mono);font-size:0.64rem;font-weight:700;letter-spacing:0.08em;padding:4px 11px;border-radius:99px;border:2px solid var(--rule);color:var(--ink-2)}
+.mode-chip{font-family:var(--mono);font-size:0.64rem;font-weight:700;letter-spacing:0.08em;padding:4px 11px;border-radius:0px;border:2px solid var(--rule);color:var(--ink-2)}
 .mode-chip.paper{border-color:var(--amber);color:#fff;background:var(--amber)}
 .mode-chip.live-money{border-color:var(--green);color:#fff;background:var(--green)}
 .bot-state{display:flex;align-items:center;gap:7px;margin-left:auto;font-size:0.82rem;font-weight:700}
@@ -57,7 +57,7 @@ body{font-family:var(--body);background:
 
 /* ═══════════ Tabs (TASK 7: Mobile full-width thumb target) ═══════════ */
 .tabs{display:flex;gap:6px;margin-bottom:12px}
-.tab-btn{font-family:var(--disp);font-weight:700;font-size:0.9rem;background:var(--surface);border:2px solid var(--rule);border-radius:99px;color:var(--ink-2);cursor:pointer;padding:8px 20px;transition:color .15s,background .15s,border-color .15s,transform .1s}
+.tab-btn{font-family:var(--disp);font-weight:700;font-size:0.9rem;background:var(--surface);border:2px solid var(--rule);border-radius:0px;color:var(--ink-2);cursor:pointer;padding:8px 20px;transition:color .15s,background .15s,border-color .15s,transform .1s}
 .tab-btn:hover{color:var(--ink);border-color:var(--ink)}
 .tab-btn:active{transform:translateY(1px)}
 .tab-btn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
@@ -77,10 +77,10 @@ body{font-family:var(--body);background:
 .rail-stage-label{font-family:var(--mono);font-size:0.74rem;font-weight:700;color:var(--amber);transition:color .4s}
 .rail-container{position:relative;padding:12px 14px 6px}
 .rail{position:relative;display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:24px 10px 8px;align-items:start}
-.rail-track{position:absolute;height:4px;border-radius:2px;background:var(--rule-soft);overflow:hidden}
-.rail-fill{height:100%;width:0;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--fill-end,var(--purple)));transition:width .6s ease;box-shadow:0 0 8px rgba(46,134,222,0.4)}
+.rail-track{position:absolute;height:4px;border-radius:0px;background:var(--rule-soft);overflow:hidden}
+.rail-fill{height:100%;width:0;border-radius:0px;background:linear-gradient(90deg,var(--blue),var(--fill-end,var(--purple)));transition:width .6s ease;box-shadow:0 0 8px rgba(46,134,222,0.4)}
 .rail-step{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;z-index:1;cursor:pointer}
-.rn-icon{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:var(--surface);border:2px solid var(--rule);color:var(--ink-3);transition:all .25s ease}
+.rn-icon{width:36px;height:36px;border-radius:0px;display:flex;align-items:center;justify-content:center;background:var(--surface);border:2px solid var(--rule);color:var(--ink-3);transition:all .25s ease}
 .rn-icon svg{width:17px;height:17px}
 .rail-step .rn-name{font-family:var(--disp);font-weight:700;font-size:0.68rem;color:var(--ink-2);line-height:1.15;transition:color .25s}
 .rail-step.done .rn-icon{background:var(--sc);border-color:var(--sc);color:#fff;box-shadow:0 2px 8px color-mix(in srgb,var(--sc) 35%,transparent)}
@@ -166,7 +166,7 @@ canvas#equityChart{width:100% !important;height:100% !important}
 /* ═══════════ Live Market Chart Panel (TASK 9) ═══════════ */
 .market-panel{margin-top:12px}
 .market-panel-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:2px solid var(--rule-soft);flex-wrap:wrap;gap:8px}
-.live-price-badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:0.85rem;font-weight:700;padding:3px 10px;border-radius:99px;background:rgba(46,134,222,0.12);color:var(--blue);border:1px solid rgba(46,134,222,0.3);transition:all .3s ease}
+.live-price-badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:0.85rem;font-weight:700;padding:3px 10px;border-radius:0px;background:rgba(46,134,222,0.12);color:var(--blue);border:1px solid rgba(46,134,222,0.3);transition:all .3s ease}
 .live-price-badge.down{background:rgba(124,92,224,0.12);color:var(--purple);border-color:rgba(124,92,224,0.3)}
 .pulse-dot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulseDot 1.5s ease-in-out infinite}
 @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(1.4)}}
@@ -183,7 +183,7 @@ table.blotter tbody tr:nth-child(even) td{background:rgba(14,22,38,0.02)}
 table.blotter tbody tr:hover td{background:var(--green-soft)}
 .num{font-family:var(--mono);text-align:right;font-weight:700}
 .num.pos{color:var(--green)}.num.neg{color:var(--rust)}
-.badge{display:inline-block;font-family:var(--mono);font-size:0.6rem;font-weight:700;padding:2px 8px;border-radius:99px}
+.badge{display:inline-block;font-family:var(--mono);font-size:0.6rem;font-weight:700;padding:2px 8px;border-radius:0px}
 .badge.win{background:var(--green);color:#fff}
 .badge.loss{background:var(--rust);color:#fff}
 .badge.scalp{border:2px solid var(--amber);color:var(--amber);background:transparent;padding:1px 6px}
