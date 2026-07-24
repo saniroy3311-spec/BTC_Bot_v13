@@ -310,6 +310,123 @@ canvas#equityChart{width:100% !important;height:100% !important}
   }
 }
 
+/* ═══════════ 4-STATE TRADE ANIMATIONS ═══════════ */
+
+/* ── FLAT: Scanning overlay text ── */
+.scan-overlay{
+  position:absolute;
+  top:0;left:0;right:0;bottom:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
+  z-index:1;
+}
+.scan-text{
+  font-family:var(--mono);
+  font-size:0.62rem;
+  font-weight:700;
+  letter-spacing:0.14em;
+  color:rgba(46,134,222,0.55);
+  animation:scanTextPulse 2.2s ease-in-out infinite;
+}
+@keyframes scanTextPulse{
+  0%,100%{opacity:0.4;letter-spacing:0.14em}
+  50%{opacity:1;letter-spacing:0.2em}
+}
+.scan-line-h{
+  position:absolute;
+  left:0;right:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(46,134,222,0.5),transparent);
+  animation:scanLineH 3s linear infinite;
+  pointer-events:none;
+  z-index:2;
+}
+@keyframes scanLineH{
+  0%{top:0%;opacity:0}
+  10%{opacity:1}
+  90%{opacity:1}
+  100%{top:100%;opacity:0}
+}
+
+/* ── ENTRY: Sniper scope overlay ── */
+#scopeOverlay{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  pointer-events:none;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:rgba(14,22,38,0);
+  animation:scopeFadeIn 0.2s ease forwards;
+}
+#scopeOverlay.show{display:flex}
+@keyframes scopeFadeIn{
+  from{background:rgba(14,22,38,0)}
+  to{background:rgba(14,22,38,0.45)}
+}
+.scope-svg{
+  animation:scopeZoom 1.4s cubic-bezier(.2,1.5,.4,1) forwards;
+}
+@keyframes scopeZoom{
+  0%{transform:scale(4);opacity:0}
+  40%{transform:scale(1.05);opacity:1}
+  70%{transform:scale(0.98)}
+  85%{transform:scale(1.02)}
+  100%{transform:scale(1);opacity:1}
+}
+.scope-lock-ring{
+  animation:lockRing 0.35s ease 1.1s forwards;
+  opacity:0;
+}
+@keyframes lockRing{
+  0%{opacity:0;stroke-width:3}
+  50%{opacity:1;stroke-width:6}
+  100%{opacity:1;stroke-width:2.5}
+}
+
+/* ── ENTRY/EXIT: Flash banner ── */
+#tradeBanner{
+  position:fixed;
+  top:0;left:0;right:0;
+  z-index:9998;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  padding:14px 24px;
+  font-family:var(--mono);
+  font-weight:700;
+  font-size:1.0rem;
+  letter-spacing:0.06em;
+  backdrop-filter:blur(6px);
+  border-bottom:3px solid currentColor;
+  animation:bannerSlide 0.4s cubic-bezier(.2,1.4,.4,1) forwards;
+}
+#tradeBanner.show{display:flex}
+#tradeBanner.entry-long{background:rgba(0,179,104,0.92);color:#fff;border-color:#00ff88;text-shadow:0 0 18px rgba(0,255,136,0.7)}
+#tradeBanner.entry-short{background:rgba(255,59,92,0.92);color:#fff;border-color:#ff3b5c;text-shadow:0 0 18px rgba(255,59,92,0.7)}
+#tradeBanner.exit-win{background:rgba(0,179,104,0.88);color:#fff;border-color:#00ff88}
+#tradeBanner.exit-loss{background:rgba(255,59,92,0.88);color:#fff;border-color:#ff3b5c}
+@keyframes bannerSlide{
+  from{transform:translateY(-100%);opacity:0}
+  to{transform:translateY(0);opacity:1}
+}
+.banner-icon{font-size:1.4rem}
+.banner-sub{font-size:0.7rem;opacity:0.8;font-weight:600;letter-spacing:0.08em}
+
+/* ── EXIT: Particle canvas ── */
+#particleCanvas{
+  position:fixed;
+  inset:0;
+  z-index:9997;
+  pointer-events:none;
+  display:none;
+}
+#particleCanvas.show{display:block}
+
 .log-panel{margin-top:12px;overflow-x:auto;-webkit-overflow-scrolling:touch}
 table.blotter{width:100%;min-width:1100px;border-collapse:collapse;font-size:0.76rem;table-layout:auto}
 table.blotter th{text-align:left;padding:10px 10px;font-family:var(--disp);font-weight:700;font-size:0.62rem;text-transform:uppercase;letter-spacing:0.03em;color:#fff;background:var(--ink);cursor:pointer;user-select:none;white-space:nowrap;overflow:visible}
@@ -486,7 +603,7 @@ table.monthly .mbar-col{width:26%}
     <!-- LIVE GRID (Merged Status & Activity card when no trade is open) -->
     <div class="live-grid" id="liveGrid">
       <div class="live-col">
-        <div class="panel">
+        <div class="panel" id="openTradePanel">
           <div class="panel-head"><h2>Open Trade</h2><span class="meta" id="otMeta"></span></div>
           <div class="panel-body" id="otBody">
             <div class="ot-empty">No open trade.<span>The bot enters when a signal passes every filter.</span></div>
@@ -497,14 +614,58 @@ table.monthly .mbar-col{width:26%}
         <div class="panel">
           <div class="panel-head"><h2><span class="live-dot-anim" aria-hidden="true"></span>Activity</h2><span class="meta">newest first</span></div>
           <!-- EKG heartbeat animation -->
-          <div class="ekg-wrap">
+          <div class="ekg-wrap" id="ekgWrap">
             <canvas id="ekgCanvas" aria-hidden="true"></canvas>
-            <span class="ekg-label">LIVE ●</span>
+            <span class="ekg-label" id="ekgLabel">SCANNING ●</span>
+            <div class="scan-overlay" id="scanOverlay">
+              <span class="scan-text" id="scanText">SCANNING MARKET…</span>
+            </div>
+            <div class="scan-line-h" id="scanLineH"></div>
           </div>
           <div class="feed" id="feed"><div class="feed-empty">Bot events appear here as they happen — cycle steps, entries, and exits.</div></div>
         </div>
       </div>
     </div>
+
+  <!-- Sniper scope overlay (entry) -->
+  <div id="scopeOverlay" role="presentation" aria-hidden="true">
+    <svg class="scope-svg" width="260" height="260" viewBox="0 0 260 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- outer ring -->
+      <circle cx="130" cy="130" r="120" stroke="rgba(0,255,136,0.35)" stroke-width="1.5" stroke-dasharray="8 6"/>
+      <!-- middle ring -->
+      <circle cx="130" cy="130" r="80" stroke="rgba(0,255,136,0.6)" stroke-width="1.5"/>
+      <!-- crosshairs -->
+      <line x1="130" y1="10" x2="130" y2="90" stroke="rgba(0,255,136,0.8)" stroke-width="1.5"/>
+      <line x1="130" y1="170" x2="130" y2="250" stroke="rgba(0,255,136,0.8)" stroke-width="1.5"/>
+      <line x1="10" y1="130" x2="90" y2="130" stroke="rgba(0,255,136,0.8)" stroke-width="1.5"/>
+      <line x1="170" y1="130" x2="250" y2="130" stroke="rgba(0,255,136,0.8)" stroke-width="1.5"/>
+      <!-- center dot -->
+      <circle cx="130" cy="130" r="6" fill="rgba(0,255,136,0.9)"/>
+      <!-- lock rings (animate on lock) -->
+      <circle class="scope-lock-ring" cx="130" cy="130" r="22" stroke="#00ff88" stroke-width="2.5"/>
+      <circle class="scope-lock-ring" cx="130" cy="130" r="36" stroke="rgba(0,255,136,0.5)" stroke-width="1.5"/>
+      <!-- corner brackets -->
+      <path d="M40 40 L40 60 M40 40 L60 40" stroke="rgba(0,255,136,0.7)" stroke-width="2" stroke-linecap="round"/>
+      <path d="M220 40 L220 60 M220 40 L200 40" stroke="rgba(0,255,136,0.7)" stroke-width="2" stroke-linecap="round"/>
+      <path d="M40 220 L40 200 M40 220 L60 220" stroke="rgba(0,255,136,0.7)" stroke-width="2" stroke-linecap="round"/>
+      <path d="M220 220 L220 200 M220 220 L200 220" stroke="rgba(0,255,136,0.7)" stroke-width="2" stroke-linecap="round"/>
+      <!-- direction text -->
+      <text id="scopeDirText" x="130" y="118" text-anchor="middle" font-family="monospace" font-size="11" font-weight="700" fill="rgba(0,255,136,0.9)" letter-spacing="3">LOCKED</text>
+      <text id="scopePriceText" x="130" y="148" text-anchor="middle" font-family="monospace" font-size="13" font-weight="700" fill="#fff">$--</text>
+    </svg>
+  </div>
+
+  <!-- Trade flash banner -->
+  <div id="tradeBanner" role="alert" aria-live="assertive">
+    <span class="banner-icon" id="bannerIcon">🎯</span>
+    <div>
+      <div id="bannerTitle">ENTRY FIRED</div>
+      <div class="banner-sub" id="bannerSub">LONG · $65,113 · 100 lots</div>
+    </div>
+  </div>
+
+  <!-- Particle canvas (exit burst) -->
+  <canvas id="particleCanvas" aria-hidden="true"></canvas>
 
     <!-- LIVE MARKET & TRADE CHART -->
     <div class="panel market-panel">
@@ -1315,20 +1476,28 @@ setInterval(fetchLiveCandles,10000);
     return 0.5;
   }
 
-  const SPEED=0.6; /* pixels per frame */
-  const TRAIL=180; /* px of visible trail */
+  const SPEED=0.6; /* pixels per frame — overridden by _ekgConfig */
+  const TRAIL=180; /* px of visible trail — overridden by _ekgConfig */
 
   function frame(){
+    /* Read dynamic config from trade state engine */
+    const cfg=(window._ekgConfig&&window._ekgState)?
+      (window._ekgConfig[window._ekgState]||window._ekgConfig.flat):
+      {speed:0.6,color:'rgba(0,179,104,',trail:180};
+    const spd=cfg.speed;
+    const col=cfg.color;
+    const trail=cfg.trail;
+
     ctx.clearRect(0,0,W,H);
     /* Background subtle glow */
     const grd=ctx.createLinearGradient(0,0,0,H);
-    grd.addColorStop(0,'rgba(0,179,104,0.03)');
+    grd.addColorStop(0,col+'0.03)');
     grd.addColorStop(1,'transparent');
     ctx.fillStyle=grd;
     ctx.fillRect(0,0,W,H);
 
     /* Grid lines */
-    ctx.strokeStyle='rgba(0,179,104,0.07)';
+    ctx.strokeStyle=col+'0.07)';
     ctx.lineWidth=1;
     for(let x=0;x<W;x+=40){
       ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();
@@ -1336,26 +1505,23 @@ setInterval(fetchLiveCandles,10000);
     ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();
 
     /* EKG line */
-    const cycleW=W*0.55; /* one full cycle width in px */
+    const cycleW=W*0.55;
     ctx.beginPath();
     let started=false;
     for(let px=0;px<W;px++){
-      /* age: distance from leading edge (offset px) */
       const age=(offset-px+W*10)%W;
-      if(age>TRAIL)continue;
-      const t=((px-offset+W*10)%cycleW)/cycleW;
+      if(age>trail)continue;
       const y=sampleEkg(((px+offset)%cycleW)/cycleW)*(H-12)+6;
-      const alpha=Math.max(0,1-age/TRAIL);
       if(!started){ctx.moveTo(px,y);started=true;}else{ctx.lineTo(px,y);}
     }
     /* Gradient stroke */
-    const lineGrd=ctx.createLinearGradient(Math.max(0,offset-TRAIL),0,offset,0);
-    lineGrd.addColorStop(0,'rgba(0,179,104,0)');
-    lineGrd.addColorStop(0.7,'rgba(0,179,104,0.6)');
-    lineGrd.addColorStop(1,'rgba(0,179,104,1)');
+    const lineGrd=ctx.createLinearGradient(Math.max(0,offset-trail),0,offset,0);
+    lineGrd.addColorStop(0,col+'0)');
+    lineGrd.addColorStop(0.7,col+'0.6)');
+    lineGrd.addColorStop(1,col+'1)');
     ctx.strokeStyle=lineGrd;
     ctx.lineWidth=2;
-    ctx.shadowColor='rgba(0,179,104,0.7)';
+    ctx.shadowColor=col+'0.7)';
     ctx.shadowBlur=6;
     ctx.stroke();
     ctx.shadowBlur=0;
@@ -1365,13 +1531,13 @@ setInterval(fetchLiveCandles,10000);
     const leadY=sampleEkg(leadT)*(H-12)+6;
     ctx.beginPath();
     ctx.arc(offset%W,leadY,3.5,0,Math.PI*2);
-    ctx.fillStyle='rgba(0,179,104,1)';
-    ctx.shadowColor='rgba(0,179,104,0.9)';
+    ctx.fillStyle=col+'1)';
+    ctx.shadowColor=col+'0.9)';
     ctx.shadowBlur=10;
     ctx.fill();
     ctx.shadowBlur=0;
 
-    offset=(offset+SPEED)%(W);
+    offset=(offset+spd)%(W);
     requestAnimationFrame(frame);
   }
   if(!window.matchMedia('(prefers-reduced-motion:reduce)').matches) frame();
@@ -1401,6 +1567,198 @@ function updateTicker(){
   });
 }
 setInterval(updateTicker,2500);
+
+/* ─── 4-STATE TRADE ANIMATION ENGINE ─── */
+(function(){
+  /* EKG state vars — exposed so the existing EKG canvas loop can read them */
+  window._ekgState = 'flat'; // 'flat' | 'trade-long' | 'trade-short'
+
+  /* ── Scanning state visuals ── */
+  function setScanningMode(){
+    const lbl=document.getElementById('ekgLabel');
+    const so=document.getElementById('scanOverlay');
+    const sl=document.getElementById('scanLineH');
+    const wrap=document.getElementById('ekgWrap');
+    if(lbl){lbl.textContent='SCANNING \u25cf';lbl.style.color='rgba(46,134,222,0.7)';}
+    if(so)so.style.display='flex';
+    if(sl)sl.style.display='block';
+    if(wrap)wrap.style.background='linear-gradient(180deg,rgba(46,134,222,0.04) 0%,transparent 100%)';
+    window._ekgState='flat';
+  }
+
+  function setTradeMode(dir){
+    const lbl=document.getElementById('ekgLabel');
+    const so=document.getElementById('scanOverlay');
+    const sl=document.getElementById('scanLineH');
+    const wrap=document.getElementById('ekgWrap');
+    const isLong=dir==='long';
+    const col=isLong?'rgba(0,179,104,1)':'rgba(255,59,92,1)';
+    const bg=isLong?'rgba(0,179,104,0.04)':'rgba(255,59,92,0.04)';
+    if(lbl){lbl.textContent=(isLong?'\u25b2 LONG':'▼ SHORT')+' \u25cf';lbl.style.color=col;}
+    if(so)so.style.display='none';
+    if(sl)sl.style.display='none';
+    if(wrap)wrap.style.background=`linear-gradient(180deg,${bg} 0%,transparent 100%)`;
+    window._ekgState=isLong?'trade-long':'trade-short';
+  }
+
+  /* ── Sniper Scope ── */
+  function fireScope(dir,price){
+    const scope=document.getElementById('scopeOverlay');
+    const dirTxt=document.getElementById('scopeDirText');
+    const priceTxt=document.getElementById('scopePriceText');
+    const svg=scope?scope.querySelector('.scope-svg'):null;
+    if(!scope)return;
+    const isLong=dir==='long';
+    const col=isLong?'rgba(0,255,136,0.9)':'rgba(255,100,100,0.9)';
+    /* Update scope color for short */
+    if(!isLong){
+      scope.querySelectorAll('circle,line,path').forEach(el=>{
+        const s=el.getAttribute('stroke');
+        if(s&&s.includes('0,255,136'))el.setAttribute('stroke',s.replace('0,255,136','255,80,80'));
+        const f=el.getAttribute('fill');
+        if(f&&f.includes('0,255,136'))el.setAttribute('fill',f.replace('0,255,136','255,80,80'));
+      });
+    }
+    if(dirTxt){dirTxt.textContent=isLong?'LONG':'SHORT';dirTxt.setAttribute('fill',col);}
+    if(priceTxt)priceTxt.textContent='$'+price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    /* Re-trigger animation by cloning SVG */
+    if(svg){
+      const clone=svg.cloneNode(true);
+      scope.replaceChild(clone,svg);
+    }
+    scope.classList.add('show');
+    setTimeout(()=>{scope.classList.remove('show');},2200);
+  }
+
+  /* ── Flash Banner ── */
+  function fireBanner(type,title,sub,icon){
+    const b=document.getElementById('tradeBanner');
+    const ti=document.getElementById('bannerTitle');
+    const si=document.getElementById('bannerSub');
+    const ic=document.getElementById('bannerIcon');
+    if(!b)return;
+    b.className='show '+type;
+    if(ti)ti.textContent=title;
+    if(si)si.textContent=sub;
+    if(ic)ic.textContent=icon;
+    b.style.display='flex';
+    clearTimeout(b._t);
+    b._t=setTimeout(()=>{b.style.display='none';b.className='';},3500);
+  }
+
+  /* ── Particle Burst ── */
+  function fireParticles(win){
+    const c=document.getElementById('particleCanvas');
+    if(!c)return;
+    c.width=window.innerWidth;c.height=window.innerHeight;
+    const ctx=c.getContext('2d');
+    c.classList.add('show');
+    const col=win?['#00ff88','#00b368','#00e676','#ffffff']:['#ff3b5c','#ff6b6b','#ff9500','#ffffff'];
+    const particles=[];
+    const cx=window.innerWidth/2,cy=100;
+    for(let i=0;i<90;i++){
+      const angle=Math.random()*Math.PI*2;
+      const spd=3+Math.random()*8;
+      particles.push({
+        x:cx,y:cy,
+        vx:Math.cos(angle)*spd,vy:Math.sin(angle)*spd-4,
+        r:2+Math.random()*4,
+        color:col[Math.floor(Math.random()*col.length)],
+        life:1,decay:0.012+Math.random()*0.018
+      });
+    }
+    function draw(){
+      ctx.clearRect(0,0,c.width,c.height);
+      let alive=false;
+      particles.forEach(p=>{
+        p.x+=p.vx;p.y+=p.vy;p.vy+=0.25;p.life-=p.decay;
+        if(p.life<=0)return;
+        alive=true;
+        ctx.globalAlpha=p.life;
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fillStyle=p.color;
+        ctx.shadowColor=p.color;ctx.shadowBlur=8;
+        ctx.fill();
+        ctx.shadowBlur=0;
+      });
+      ctx.globalAlpha=1;
+      if(alive)requestAnimationFrame(draw);
+      else{c.classList.remove('show');ctx.clearRect(0,0,c.width,c.height);}
+    }
+    requestAnimationFrame(draw);
+  }
+
+  /* ── State Machine ── */
+  let _prevHadTrade=null;
+  let _prevDir=null;
+
+  function checkTradeState(){
+    const ot=st.openTrade;
+    const hasTrade=!!(ot&&ot.direction);
+    const dir=hasTrade?ot.direction:null;
+
+    if(_prevHadTrade===null){
+      /* First run — set initial state silently */
+      if(hasTrade)setTradeMode(dir);
+      else setScanningMode();
+      _prevHadTrade=hasTrade;
+      _prevDir=dir;
+      return;
+    }
+
+    if(!_prevHadTrade&&hasTrade){
+      /* FLAT → IN TRADE: Entry fired! */
+      const price=ot.entryPrice||0;
+      const qty=ot.qty||100;
+      const isLong=dir==='long';
+      setTradeMode(dir);
+      fireScope(dir,price);
+      setTimeout(()=>{
+        fireBanner(
+          isLong?'entry-long':'entry-short',
+          (isLong?'\u25b2 LONG ENTRY FIRED':'\u25bc SHORT ENTRY FIRED'),
+          (isLong?'LONG':'SHORT')+' \u00b7 $'+price.toLocaleString('en-US',{maximumFractionDigits:2})+' \u00b7 '+qty+' lots',
+          isLong?'\ud83d\udfe2':'\ud83d\udd34'
+        );
+      },800);
+    } else if(_prevHadTrade&&!hasTrade){
+      /* IN TRADE → FLAT: Exit fired! */
+      const lastTrade=st.trades&&st.trades.length?st.trades[0]:null;
+      const win=lastTrade?lastTrade.netPnl>=0:true;
+      const net=lastTrade?lastTrade.netPnl:0;
+      const sign=net>=0?'+':'';
+      setScanningMode();
+      fireParticles(win);
+      fireBanner(
+        win?'exit-win':'exit-loss',
+        win?'\ud83c\udfc6 TRADE CLOSED — PROFIT':'\ud83d\udc94 TRADE CLOSED — LOSS',
+        'Net P&L: '+sign+'$'+Math.abs(net).toFixed(2)+' USD',
+        win?'\ud83c\udfc6':'\ud83d\udc94'
+      );
+    }
+
+    _prevHadTrade=hasTrade;
+    _prevDir=dir;
+  }
+
+  /* Hook into the poll cycle */
+  const _origPoll=typeof poll==='function'?poll:null;
+  setInterval(checkTradeState,2200);
+  /* Run once on load */
+  setTimeout(()=>{
+    if(!st.openTrade)setScanningMode();
+    else setTradeMode(st.openTrade.direction||'long');
+  },1000);
+})();
+
+/* ─── EKG speed & color adapts to trade state ─── */
+/* Patch the existing EKG loop speed via global state */
+window._ekgConfig={
+  flat:    {speed:0.35, color:'rgba(46,134,222,', trail:120},
+  'trade-long':  {speed:1.1,  color:'rgba(0,179,104,',  trail:200},
+  'trade-short': {speed:1.1,  color:'rgba(255,59,92,',  trail:200},
+};
 </script>
 </body>
 </html>
