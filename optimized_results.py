@@ -3,7 +3,7 @@ import pandas as pd, sys
 sys.path.insert(0, r"D:\BTC Bot v13")
 from backtest_v2 import *
 
-raw = pd.read_csv(r"D:\BTC Bot v13\BTCUSDT_30m_2year.csv")
+raw = pd.read_csv(r"D:/BTC_Bot_v13/BTCUSDT_30m_2year.csv")
 num_cols = ["open","high","low","close","volume"]
 data = {c: raw[c].values.astype(float) for c in num_cols}
 ind = compute_indicators(data["close"], data["high"], data["low"], data["volume"])

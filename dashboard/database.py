@@ -6,23 +6,22 @@ TURSO_URL   = os.environ.get("TURSO_URL", "")
 TURSO_TOKEN = os.environ.get("TURSO_TOKEN", "")
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-JOURNAL_DB = os.path.join(_REPO_ROOT, "journal.db")
+JOURNAL_DB = os.environ.get("LOG_FILE") or os.path.join(_REPO_ROOT, "journal.db")
 CLIENTS_DB = os.path.join(_REPO_ROOT, "clients.db")
 
 def get_db_connection(db_name=None):
     if db_name is None:
         db_name = CLIENTS_DB
-    if db_name is None:
-        db_name = CLIENTS_DB
-    if TURSO_URL and TURSO_TOKEN:
-        import libsql_experimental as libsql
-        conn = libsql.connect(database=TURSO_URL, auth_token=TURSO_TOKEN)
-        return conn
-    else:
-        import sqlite3
-        conn = sqlite3.connect(db_name)
-        conn.row_factory = sqlite3.Row
-        return conn
+    if TURSO_URL and TURSO_URL.strip() and TURSO_TOKEN and TURSO_TOKEN.strip():
+        try:
+            import libsql_experimental as libsql
+            conn = libsql.connect(database=TURSO_URL, auth_token=TURSO_TOKEN)
+            return conn
+        except Exception:
+            pass
+    conn = sqlite3.connect(db_name)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 def _exec(conn, query, params=()):
     cursor = conn.execute(query, params)

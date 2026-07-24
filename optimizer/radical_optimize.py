@@ -388,7 +388,7 @@ def metrics(trades, capital=10000.0):
 
 
 def run_all():
-    df = pd.read_csv(r"C:\Users\sanir\Downloads\text\BTC-Bot-v13-main\BTCUSDT_30m_2year.csv")
+    df = pd.read_csv(r"D:\BTC_Bot_v13\BTCUSDT_30m_2year.csv")
     print(f"Data: {len(df)} candles")
 
     results = []

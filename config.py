@@ -98,9 +98,9 @@ DELTA_API_KEY    = os.environ.get("DELTA_API_KEY",    "YOUR_API_KEY")
 DELTA_API_SECRET = os.environ.get("DELTA_API_SECRET", "YOUR_API_SECRET")
 DELTA_TESTNET    = os.environ.get("DELTA_TESTNET", "false").lower() == "true"
 SYMBOL    = os.environ.get("SYMBOL",    "BTC/USD:USD")
-ALERT_QTY = int(os.environ.get("ALERT_QTY", "1"))
-# position size in BTC. Converted to lots via risk.lot_sizing.btc_to_lots
-POSITION_BTC_SIZE = float(os.environ.get("POSITION_BTC_SIZE", "0.001"))
+ALERT_QTY = int(os.environ.get("ALERT_QTY", "100"))
+# position size in BTC. Converted to lots via risk.lot_sizing.btc_to_lots (0.1 BTC = 100 lots)
+POSITION_BTC_SIZE = float(os.environ.get("POSITION_BTC_SIZE", "0.1"))
 # Paper trading mode: true = simulate trades, never place real orders on Delta
 PAPER_TRADING = os.environ.get("PAPER_TRADING", "true").lower() == "true"
 
@@ -487,7 +487,7 @@ WS_RECONNECT_SEC = 5
 # ──────────────────────────────────────
 # LOGGING
 # ──────────────────────────────────────
-LOG_FILE = os.environ.get("LOG_FILE", "/root/BTC_Bot_v13/journal.db")
+LOG_FILE = os.environ.get("LOG_FILE", os.path.join(os.path.dirname(os.path.abspath(__file__)), "journal.db"))
 
 # ──────────────────────────────────────
 # SLIPPAGE TRACKING (NEW FIX)
