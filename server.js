@@ -83,14 +83,7 @@ function formatTradeNotification(trade) {
   );
 }
 
-function formatStatusNotification(status, oldStatus) {
-  const icons = { running: '✅', stopped: '⏹️', error: '⚠️' };
-  return (
-    `<b>${icons[status] || '🔄'} Bot Status Changed</b>\n` +
-    `${oldStatus ? `From: ${oldStatus.toUpperCase()}\n` : ''}` +
-    `To:   <b>${status.toUpperCase()}</b>`
-  );
-}
+
 
 // ─── State store (persisted to dashboard_state.json) ──────
 const STATE_FILE = path.join(__dirname, 'dashboard_state.json');
