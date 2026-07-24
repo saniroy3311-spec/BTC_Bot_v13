@@ -894,25 +894,30 @@ async function initLiveChart(){
     height: 320,
     layout: {
       background: { type: 'solid', color: '#FFFFFF' },
-      textColor: '#0E1626',
-      fontFamily: 'Inter, sans-serif',
+      textColor: 'rgba(14,22,38,0.72)',
+      fontFamily: '"JetBrains Mono", "Space Grotesk", sans-serif',
+      fontSize: 11,
     },
     grid: {
-      vertLines: { color: 'rgba(14,22,38,0.06)' },
-      horzLines: { color: 'rgba(14,22,38,0.06)' },
+      vertLines: { color: 'rgba(14,22,38,0.045)', style: 1 },
+      horzLines: { color: 'rgba(14,22,38,0.045)', style: 1 },
     },
-    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-    rightPriceScale: { borderColor: 'rgba(14,22,38,0.15)' },
-    timeScale: { borderColor: 'rgba(14,22,38,0.15)', timeVisible: true, secondsVisible: false },
+    crosshair: {
+      mode: LightweightCharts.CrosshairMode.Normal,
+      vertLine: { color: 'rgba(14,22,38,0.35)', width: 1, style: 3, labelBackgroundColor: '#0E1626' },
+      horzLine: { color: 'rgba(14,22,38,0.35)', width: 1, style: 3, labelBackgroundColor: '#0E1626' },
+    },
+    rightPriceScale: { borderColor: 'rgba(14,22,38,0.16)' },
+    timeScale: { borderColor: 'rgba(14,22,38,0.16)', timeVisible: true, secondsVisible: false },
   });
 
   candleSeries = liveMarketChart.addCandlestickSeries({
-    upColor: '#00B368',
-    downColor: '#FF3B5C',
-    borderUpColor: '#00B368',
-    borderDownColor: '#FF3B5C',
-    wickUpColor: '#00B368',
-    wickDownColor: '#FF3B5C',
+    upColor: '#00C853',
+    downColor: '#FF3366',
+    borderUpColor: '#00C853',
+    borderDownColor: '#FF3366',
+    wickUpColor: '#00C853',
+    wickDownColor: '#FF3366',
   });
 
   await fetchLiveCandles();
